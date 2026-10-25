@@ -13,31 +13,44 @@
 
   var Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
   APP.canListen = !!Rec;
-  // APP.listen({ onText(text, final), onEnd() }) -> { stop() }
+  // APP.listen({ before, onText(text), onEnd(text, stoppedByHer) }) -> { stop() }
+  // Keeps listening until stop() is called. Safari on iPhone ends recognition at
+  // the first pause for breath, so when it ends by itself we start it again and
+  // keep adding to the text. Only after a few silent rounds do we give up.
   APP.listen = function (o) {
-    var r = new Rec();
-    r.lang = 'en-GB';
-    r.interimResults = true;
-    r.continuous = false;
-    r.maxAlternatives = 1;
-    var finalText = '';
-    r.onresult = function (e) {
-      var interim = '';
-      for (var i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) finalText += e.results[i][0].transcript;
-        else interim += e.results[i][0].transcript;
-      }
-      o.onText((finalText + ' ' + interim).trim(), false);
-    };
-    r.onerror = function (e) {
-      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') APP.toast('I need permission to use the microphone.');
-      else if (e.error === 'network') APP.toast('Voice typing needs internet. You can type instead.');
-      else if (e.error === 'no-speech') APP.toast('I didn’t hear anything. Try again?');
-    };
-    r.onend = function () { o.onText(finalText.trim(), true); if (o.onEnd) o.onEnd(); };
+    var said = (o.before || '').trim(), stopped = false, silent = 0, r = null;
+    function join(a, b) { return (a + ' ' + b).trim(); }
+    function round() {
+      r = new Rec();
+      r.lang = 'en-GB';
+      r.interimResults = true;
+      r.continuous = false; // true repeats words on iPhone; the restart below does the job instead
+      r.maxAlternatives = 1;
+      var heard = '', fatal = false;
+      r.onresult = function (e) {
+        // rebuild the whole round from the start: iPhone repeats and revises earlier results
+        heard = '';
+        for (var i = 0; i < e.results.length; i++) heard = join(heard, e.results[i][0].transcript);
+        o.onText(join(said, heard));
+      };
+      r.onerror = function (e) {
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { fatal = true; APP.toast('I need permission to use the microphone.'); }
+        else if (e.error === 'network') { fatal = true; APP.toast('Voice typing needs internet. You can type instead.'); }
+        else if (e.error === 'audio-capture') { fatal = true; APP.toast('The microphone isn’t available right now.'); }
+      };
+      r.onend = function () {
+        said = join(said, heard);
+        silent = heard ? 0 : silent + 1;
+        if (!stopped && !fatal && silent < 3) {
+          try { round(); return; } catch (e) { /* not allowed to restart: fall through */ }
+        }
+        if (o.onEnd) o.onEnd(said, stopped);
+      };
+      r.start();
+    }
     APP.stopSpeaking();
-    r.start();
-    return { stop: function () { try { r.stop(); } catch (e) {} } };
+    round();
+    return { stop: function () { stopped = true; try { r.stop(); } catch (e) {} } };
   };
 
   /* ---------- the list ---------- */
@@ -46,7 +59,7 @@
     if (args[0]) return conversation(main, args[0]);
     var head = el('section', 'page-head');
     head.appendChild(el('h1', '', 'Let’s talk'));
-    head.appendChild(el('p', 'muted', 'Real conversations, out loud. Tap the microphone, speak, and your partner answers. Gentle corrections as you go, and feedback at the end.'));
+    head.appendChild(el('p', 'muted', 'Real conversations, out loud. Tap the microphone, speak, and tap it again when you’ve finished. Your partner answers. Gentle corrections as you go, and feedback at the end.'));
     main.appendChild(head);
 
     var mode = el('section', 'card talk-mode');
@@ -139,18 +152,29 @@
       if (over || busy) return;
       if (!APP.canListen) { input.focus(); APP.toast('Tap the 🎙️ on your keyboard to dictate.'); return; }
       if (listening) { listening.stop(); return; }
-      input.value = '';
-      mic.classList.add('on');
-      listening = APP.listen({
-        onText: function (text, final) {
+      // she talks for as long as she likes; tapping the mic again means "I've finished"
+      micOn(true);
+      var me = listening = APP.listen({
+        before: input.value,
+        onText: function (text) { if (listening === me) { input.value = text; grow(); } },
+        onEnd: function (text, stoppedByHer) {
+          if (listening !== me) return; // she already pressed send
+          listening = null;
+          micOn(false);
           input.value = text; grow();
-          if (final) {
-            listening = null;
-            mic.classList.remove('on');
-            if (text) setTimeout(function () { if (input.value === text) submit(text); }, 600);
-          }
+          if (stoppedByHer && text) submit(text);
+          else if (text) APP.toast('Tap ➤ to send, or 🎙️ to keep talking.');
         }
       });
+    });
+    function micOn(on) {
+      mic.classList.toggle('on', on);
+      mic.textContent = on ? '⏹' : '🎙️';
+      mic.setAttribute('aria-label', on ? 'I’ve finished speaking' : 'Speak');
+    }
+    window.addEventListener('hashchange', function leave() {
+      window.removeEventListener('hashchange', leave);
+      if (listening) { var l = listening; listening = null; l.stop(); }
     });
 
     var lastHint = '';
@@ -200,7 +224,7 @@
     function submit(text) {
       text = String(text || '').trim();
       if (!text || over || busy) return;
-      if (listening) { listening.stop(); listening = null; mic.classList.remove('on'); }
+      if (listening) { listening.stop(); listening = null; micOn(false); }
       input.value = ''; grow();
       var mineB = mine(text);
       turnsSaid++;

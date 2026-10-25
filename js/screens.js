@@ -52,6 +52,7 @@
   APP.route('home', function (main) {
     var g = greeting(), lvl = APP.levelOf(S.xp), streak = APP.streakNow();
     main.appendChild(hearts());
+    main.appendChild(version());
 
     var top = el('section', 'hello');
     var left = el('div', 'hello-text');
@@ -163,6 +164,16 @@
 
     if (!APP.units.length) main.appendChild(el('p', 'muted', 'No lessons found. Check the data/units folder.'));
   });
+
+  // "v3 · updated 25 Oct, 16:12" in the top corner, so we can tell which copy she has.
+  function version() {
+    var v = window.APP_VERSION;
+    if (!v) return document.createTextNode('');
+    var d = new Date(v.updated);
+    var when = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + ', ' +
+      d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    return el('p', 'app-version', v.number + ' · updated ' + when);
+  }
 
   // Hearts drifting up behind the home page.
   function hearts() {

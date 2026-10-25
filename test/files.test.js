@@ -19,6 +19,10 @@ var list = sw.slice(sw.indexOf('var FILES'), sw.indexOf('];'));
   if (!fs.existsSync(path.join(root, p))) errors.push('index.html refers to missing ' + p);
 });
 
+var swVersion = (sw.match(/var VERSION = '([^']+)'/) || [])[1];
+var appVersion = (fs.readFileSync(path.join(root, 'js/version.js'), 'utf8').match(/number: '([^']+)'/) || [])[1];
+if (swVersion !== appVersion) errors.push('js/version.js says ' + appVersion + ' but sw.js VERSION is ' + swVersion);
+
 errors.forEach(function (e) { console.log('ERROR ' + e); });
 console.log(errors.length ? errors.length + ' error(s).' : 'All files wired up.');
 process.exit(errors.length ? 1 : 0);

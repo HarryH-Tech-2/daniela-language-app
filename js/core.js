@@ -275,15 +275,24 @@
   APP.voices = function () { return synth ? synth.getVoices().filter(function (v) { return /^en[-_]/i.test(v.lang); }) : []; };
   APP.setVoice = function (name) { state.settings.voice = name; APP.save(); pickVoice(); };
   APP.canSpeak = !!synth;
+  var current = null; // keep a reference: Safari drops events for utterances it has let go of
   APP.speak = function (text, opts) {
     if (!synth) return;
     opts = opts || {};
-    synth.cancel();
     var u = new SpeechSynthesisUtterance(text);
     if (voice) { u.voice = voice; u.lang = voice.lang; } else u.lang = 'en-GB';
     u.rate = (opts.slow ? 0.7 : 1) * state.settings.rate;
     if (opts.onend) u.onend = opts.onend;
-    synth.speak(u);
+    current = u;
+    // iPhone Safari can get stuck paused (calls, app switches) and silently drops
+    // a phrase queued straight after cancel(), so only cancel when needed and wait a beat
+    if (synth.speaking || synth.pending) {
+      synth.cancel();
+      setTimeout(function () { if (current === u) { synth.resume(); synth.speak(u); } }, 80);
+    } else {
+      synth.resume();
+      synth.speak(u);
+    }
   };
   APP.stopSpeaking = function () { if (synth) synth.cancel(); };
   APP.speakBtn = function (text, label) {
@@ -309,6 +318,7 @@
     var mr = null, chunks = [], stream = null;
     rec.addEventListener('click', function () {
       if (mr && mr.state === 'recording') { mr.stop(); return; }
+      audio.pause();
       navigator.mediaDevices.getUserMedia({ audio: true }).then(function (s) {
         stream = s; chunks = [];
         mr = new MediaRecorder(s);
@@ -317,6 +327,7 @@
           stream.getTracks().forEach(function (t) { t.stop(); });
           audio.src = URL.createObjectURL(new Blob(chunks, { type: mr.mimeType || 'audio/mp4' }));
           play.disabled = false;
+          playLabel();
           rec.textContent = '● Record again';
           rec.classList.remove('on');
           if (wrap.onrecorded) wrap.onrecorded();
@@ -326,7 +337,15 @@
         rec.classList.add('on');
       }).catch(function () { APP.toast('I need permission to use the microphone.'); });
     });
-    play.addEventListener('click', function () { audio.currentTime = 0; audio.play(); });
+    // one button: play, pause while playing, resume where it left off
+    function playLabel() {
+      play.textContent = !audio.paused ? '❚❚ Pause' : audio.currentTime > 0 && !audio.ended ? '▶ Resume' : '▶ Play me back';
+    }
+    audio.onplay = audio.onpause = audio.onended = playLabel;
+    play.addEventListener('click', function () {
+      if (audio.paused) { var p = audio.play(); if (p) p.catch(function () {}); }
+      else audio.pause();
+    });
     wrap.appendChild(rec); wrap.appendChild(play);
     if (!APP.canRecord) { wrap.replaceChildren(APP.el('p', 'muted', 'Recording is not available in this browser, so say it out loud to yourself (or to Lola).')); }
     host.appendChild(wrap);
