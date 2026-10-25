@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>¡Dale, Dani!</title>
+  <meta name="description" content="Daniela's English: from B1 to C1, one little lesson at a time.">
+  <meta name="theme-color" content="#ff3d7f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Dale Dani">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,500..900,100&family=Plus+Jakarta+Sans:wght@400..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="#/"><span class="brand-flower" aria-hidden="true">🌺</span> ¡Dale, Dani!</a>
+  </header>
+
+  <main id="main" class="view"></main>
+
+  <nav class="nav" aria-label="Main">
+    <a href="#/" data-r="home"><span aria-hidden="true">🏠</span>Learn</a>
+    <a href="#/review" data-r="review"><span aria-hidden="true">🃏</span>Review</a>
+    <a href="#/games" data-r="games"><span aria-hidden="true">🎮</span>Games</a>
+    <a href="#/journal" data-r="journal"><span aria-hidden="true">✍️</span>Journal</a>
+    <a href="#/me" data-r="me"><span aria-hidden="true">💃</span>Me</a>
+  </nav>
+
+  <script src="data/profile.js"></script>
+  <!-- units: one file each; keep in step with sw.js (node test/files.test.js checks) -->
+  <script src="data/units/home.js"></script>
+  <script src="data/units/dance.js"></script>
+  <script src="data/units/kitchen.js"></script>
+  <script src="data/units/dogs.js"></script>
+  <script src="data/units/plans.js"></script>
+  <script src="data/units/law-basics.js"></script>
+  <script src="data/units/crime.js"></script>
+  <script src="data/units/gossip.js"></script>
+  <script src="data/units/style.js"></script>
+  <script src="data/units/wellness.js"></script>
+  <script src="data/units/love.js"></script>
+  <script src="data/units/abroad.js"></script>
+  <script src="data/units/regrets.js"></script>
+  <script src="data/units/mystery.js"></script>
+  <script src="data/units/career.js"></script>
+  <script src="data/units/formal.js"></script>
+  <script src="data/units/stage.js"></script>
+  <script src="data/units/critic.js"></script>
+  <script src="data/units/contracts.js"></script>
+  <script src="data/units/debate.js"></script>
+  <script src="data/units/native.js"></script>
+  <script src="data/units/true-crime.js"></script>
+  <script src="data/games.js"></script>
+  <script src="js/core.js"></script>
+  <script src="js/exercise.js"></script>
+  <script src="js/screens.js"></script>
+  <script src="js/games.js"></script>
+  <script>
+    APP.start();
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+      window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+    }
+  </script>
+</body>
+</html>
