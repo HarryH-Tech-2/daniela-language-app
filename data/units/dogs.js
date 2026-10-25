@@ -5,7 +5,7 @@
   emoji: "🐶",
   title: "Puppy school",
   topic: "Dogs",
-  intro: "Lola, the most stubborn beagle in Barranquilla, is going to school, and you're taking her. You'll learn how to talk about rules and give advice with must, have to, mustn't, don't have to, should and ought to.",
+  intro: "Lola, the most stubborn little dog in Barranquilla, is going to school, and you're taking her. You'll learn how to talk about rules and give advice with must, have to, mustn't, don't have to, should and ought to.",
 
   vocab: [
     { w: "lead", pos: "noun", def: "a long strap you attach to a dog's collar to walk it (American English: leash)", ex: "Lola pulls so hard on her lead that my arm hurts.", es: "correa (del perro)" },
@@ -16,14 +16,14 @@
     { w: "trainer", pos: "noun", def: "a person whose job is to teach people or animals a skill", ex: "Our trainer has worked with dogs for twenty years.", es: "entrenador, adiestrador" },
     { w: "behave", pos: "verb", def: "to act in a particular way, especially in a good or polite way", ex: "Lola behaves much better when she's tired.", es: "portarse, comportarse" },
     { w: "sniff", pos: "verb", def: "to smell something by taking short breaths through the nose", ex: "Dogs love sniffing every tree in the park.", es: "olfatear, husmear" },
-    { w: "stubborn", pos: "adjective", def: "refusing to change what you think or do", ex: "Beagles are clever but very stubborn.", es: "terco, testarudo" },
+    { w: "stubborn", pos: "adjective", def: "refusing to change what you think or do", ex: "Lola is clever but very stubborn.", es: "terco, testarudo" },
     { w: "patient", pos: "adjective", def: "able to wait or deal with problems calmly, without getting angry", ex: "You have to be patient with puppies.", es: "paciente" }
   ],
 
   reading: {
     title: "Lola goes to school",
     text: [
-      "My neighbour, Doña Marta, has a beagle called Lola. Lola is adorable, but she is also the most stubborn dog in Barranquilla. She barks at motorbikes, steals socks and pulls so hard on her lead that walking her feels like water-skiing. So when Doña Marta had to travel to Bogotá for a month, she asked me a favour: 'You have to take Lola to puppy school on Saturdays.'",
+      "My neighbour, Doña Marta, has a scruffy little brown dog called Lola. Lola is adorable, but she is also the most stubborn dog in Barranquilla. She barks at motorbikes, steals socks and pulls so hard on her lead that walking her feels like water-skiing. So when Doña Marta had to travel to Bogotá for a month, she asked me a favour: 'You have to take Lola to puppy school on Saturdays.'",
       "The trainer, a tall woman called Paola, explained the rules on the first day. 'You must bring treats to every class, and you mustn't feed the dogs before the lesson, because a hungry dog learns faster. You don't have to buy an expensive lead. A cheap one is fine.' Then she looked at Lola, who was sniffing another dog's bottom, and added, 'And you should be very patient.'",
       "The first class was a disaster. Lola wouldn't sit, wouldn't come, and ate a whole bag of treats in thirty seconds. Paola gave me some advice: 'You ought to reward her the moment she does something right, not five seconds later. Dogs live in the present.'",
       "By the fourth week, Lola could sit, wait and walk next to me without pulling. She still barks at motorbikes (nobody's perfect), but she behaves much better. When Doña Marta came back, she couldn't believe it. 'What did you do to my dog? She's so obedient!' I just smiled. She doesn't need to know about the socks under my bed."

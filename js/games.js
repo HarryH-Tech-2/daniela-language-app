@@ -4,6 +4,7 @@
   var APP = window.APP, el = APP.el, btn = APP.btn, S = APP.state, G = APP.games;
 
   var LIST = [
+    { id: 'pictures', icon: '🖼️', name: 'Picture this', desc: 'Look at the picture. Which word is it?', need: 'pics' },
     { id: 'friends', icon: '🎭', name: 'Falsos amigos', desc: 'Words that look Spanish but lie to you.', need: 'falseFriends' },
     { id: 'fixit', icon: '🔍', name: 'Correct or not?', desc: 'Spot the classic mistakes.', need: 'mistakes' },
     { id: 'speed', icon: '⏱️', name: 'Speed round', desc: '60 seconds. How many can you get?' },
@@ -22,7 +23,8 @@
     main.appendChild(head);
     var grid = el('section', 'games');
     LIST.forEach(function (g) {
-      if (g.need && !(G[g.need] || []).length) return;
+      if (g.need === 'pics') { if (picWords().length < 8) return; }
+      else if (g.need && !(G[g.need] || []).length) return;
       var a = el('a', 'game-card');
       a.href = '#/game/' + g.id;
       a.appendChild(el('span', 'game-i', g.icon));
@@ -39,7 +41,7 @@
     var g = LIST.filter(function (x) { return x.id === args[0]; })[0];
     if (!g) { APP.go('#/games'); return; }
     APP.backBar(main, '#/games', g.icon + ' ' + g.name);
-    ({ friends: friends, fixit: fixit, speed: speed, rescue: rescue, sounds: sounds, idioms: idioms,
+    ({ pictures: pictures, friends: friends, fixit: fixit, speed: speed, rescue: rescue, sounds: sounds, idioms: idioms,
       phrasal: phrasal, memory: memory, dictation: dictation })[g.id](main, g);
   });
 
@@ -101,6 +103,20 @@
     row.appendChild(a); row.appendChild(b);
     r.appendChild(row);
     return r;
+  }
+
+  /* ---------- Picture this: see the picture, pick the word ---------- */
+
+  function picWords() { return APP.allWords.filter(function (v) { return APP.wordImg(v); }); }
+  function pictures(main, g) {
+    var all = picWords();
+    var mine = all.filter(function (v) { return S.srs[APP.wordKey(v)]; });
+    var pool = mine.length >= 10 ? mine : all;
+    rounds(main, g, APP.pick(pool, 10).map(function (v) {
+      var wrong = APP.pick(all.filter(function (o) { return o.w !== v.w; }), 3).map(function (o) { return o.w; });
+      return { kind: 'choice', label: 'What’s in the picture?', image: APP.wordImg(v), q: '', right: v.w, wrong: wrong,
+        why: v.w + ': ' + v.def + ' (🇨🇴 ' + v.es + ')' };
+    }), 6);
   }
 
   function friendQ(f) {

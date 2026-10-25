@@ -161,6 +161,17 @@
   });
   APP.wordKey = function (v) { return v.unit + ':' + v.w; };
 
+  // pictures (data/images.js, built by tools/images.py)
+  var IMG = window.IMAGES || { stories: {}, words: {} };
+  APP.wordImg = function (v) { return (IMG.words || {})[v.unit + ':' + v.w] || ''; };
+  APP.storyImg = function (id) { return (IMG.stories || {})[id] || ''; };
+  APP.img = function (src, cls, alt) {
+    var i = APP.el('img', cls);
+    i.src = src; i.alt = alt || ''; i.loading = 'lazy'; i.decoding = 'async';
+    i.onerror = function () { i.remove(); };
+    return i;
+  };
+
   APP.unitState = function (id) {
     return state.units[id] || (state.units[id] = { stars: 0, best: 0, steps: {} });
   };

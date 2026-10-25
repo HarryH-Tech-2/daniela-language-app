@@ -51,6 +51,7 @@
 
   APP.route('home', function (main) {
     var g = greeting(), lvl = APP.levelOf(S.xp), streak = APP.streakNow();
+    main.appendChild(hearts());
 
     var top = el('section', 'hello');
     var left = el('div', 'hello-text');
@@ -106,6 +107,8 @@
       head.appendChild(el('span', 'wotd-label', 'Word of the day'));
       head.appendChild(APP.speakBtn(w.w));
       wd.appendChild(head);
+      var wpic = APP.wordImg(w);
+      if (wpic) { wd.classList.add('has-img'); wd.appendChild(APP.img(wpic, 'wotd-img', w.w)); }
       wd.appendChild(el('p', 'wotd-word', w.w));
       wd.appendChild(el('p', 'wotd-def', w.def));
       var es = el('p', 'wotd-es', '🇨🇴 ' + w.es);
@@ -116,7 +119,7 @@
 
     var quick = el('section', 'quick');
     quick.appendChild(tile('#/review', '🃏', 'Review words', due ? due + ' due now' : 'All caught up'));
-    quick.appendChild(tile('#/game/speed', '⏱️', 'Speed round', 'Best: ' + (S.games.speed || 0)));
+    quick.appendChild(tile('#/talk', '🗣️', 'Let’s talk', 'Speak out loud'));
     quick.appendChild(tile('#/game/rescue', '🐶', 'Save the puppy', (S.games.rescueWins || 0) + ' saved'));
     quick.appendChild(tile('#/journal', '✍️', 'My journal', S.journal.length + ' entr' + (S.journal.length === 1 ? 'y' : 'ies')));
     main.appendChild(quick);
@@ -160,6 +163,22 @@
 
     if (!APP.units.length) main.appendChild(el('p', 'muted', 'No lessons found. Check the data/units folder.'));
   });
+
+  // Hearts drifting up behind the home page.
+  function hearts() {
+    var box = el('div', 'hearts');
+    box.setAttribute('aria-hidden', 'true');
+    var colors = ['var(--pink)', '#ff8fb3', 'var(--orange)', '#ffb3c9', 'var(--purple)'];
+    for (var i = 0; i < 18; i++) {
+      var h = el('span', 'heart');
+      h.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.4 2.3 4 6.4 4c2.3 0 3.9 1.4 5.6 3.4C13.7 5.4 15.3 4 17.6 4c4.1 0 6 4.4 4.4 7.7C19.5 16.4 12 21 12 21z" fill="currentColor"/></svg>';
+      var size = 12 + Math.random() * 26;
+      h.style.cssText = 'left:' + (Math.random() * 100) + '%;width:' + size + 'px;height:' + size + 'px;color:' + colors[i % colors.length] +
+        ';animation-duration:' + (14 + Math.random() * 16) + 's;animation-delay:' + (-Math.random() * 30) + 's;--sway:' + (Math.random() * 60 - 30) + 'px;opacity:' + (0.22 + Math.random() * 0.3);
+      box.appendChild(h);
+    }
+    return box;
+  }
 
   function chip(icon, text, cls) {
     var c = el('a', 'chip chip-' + cls);
@@ -243,6 +262,8 @@
     var grid = el('div', 'vocab');
     u.vocab.forEach(function (v) {
       var c = el('article', 'vcard');
+      var pic = APP.wordImg(Object.assign({ unit: u.id }, v));
+      if (pic) { c.classList.add('has-img'); c.appendChild(APP.img(pic, 'vcard-img', v.w)); }
       var top = el('div', 'vcard-top');
       top.appendChild(el('span', 'vcard-w', v.w));
       top.appendChild(APP.speakBtn(v.w));
@@ -300,6 +321,8 @@
     top.appendChild(el('strong', '', v.w));
     top.appendChild(APP.speakBtn(v.w));
     pop.appendChild(top);
+    var gp = APP.wordImg(v);
+    if (gp) pop.appendChild(APP.img(gp, 'gloss-img', v.w));
     pop.appendChild(el('p', '', v.def));
     pop.appendChild(el('p', 'gloss-es', '🇨🇴 ' + v.es));
     document.body.appendChild(pop);
@@ -316,13 +339,15 @@
   function storyStep(body, u, us, nextButton) {
     var r = u.reading;
     var card = el('article', 'story');
+    var hero = APP.storyImg(u.id);
+    if (hero) card.appendChild(APP.img(hero, 'story-img', r.title));
     var h = el('div', 'story-head');
     h.appendChild(el('h2', 'story-title', r.title));
     var all = APP.speakBtn(function () { return r.title + '. ' + r.text.join(' '); }, 'Listen to it all');
     h.appendChild(all);
     card.appendChild(h);
     card.appendChild(el('p', 'step-lead', 'Underlined words are from this lesson: tap them. The 🔊 next to each paragraph reads it aloud.'));
-    var find = wordFinder(u.vocab);
+    var find = wordFinder(u.vocab.map(function (v) { return Object.assign({ unit: u.id }, v); }));
     r.text.forEach(function (p) {
       var row = el('div', 'para');
       var pp = el('p', '');
@@ -547,6 +572,8 @@
         var v = cards[i];
         var card = btn('flash');
         var front = el('span', 'flash-side flash-front'), back = el('span', 'flash-side flash-back');
+        var fp = APP.wordImg(v);
+        if (fp) front.appendChild(APP.img(fp, 'flash-img', ''));
         if (!reverse) {
           front.appendChild(el('span', 'flash-word', v.w));
           front.appendChild(el('span', 'pos', v.pos));

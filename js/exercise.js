@@ -14,6 +14,7 @@
     var label = { choice: 'Choose the answer', gap: 'Fill the gap', tf: 'True or false?', type: 'Write the missing words',
       order: 'Build the sentence', match: 'Match the pairs', listen: 'Listen and write what you hear' }[x.kind];
     host.appendChild(el('p', 'ex-kind', x.label || label));
+    if (x.image) host.appendChild(APP.img(x.image, 'ex-img', ''));
 
     var prompt = el('p', 'ex-q');
     var blank = null;

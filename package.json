@@ -1,0 +1,10 @@
+{
+  "name": "dale-dani",
+  "private": true,
+  "scripts": {
+    "test": "node test/content.test.js && node test/files.test.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.3.0"
+  }
+}
