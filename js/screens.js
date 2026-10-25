@@ -816,9 +816,11 @@
     inst.appendChild(el('p', 'muted small', 'Voices: if the voice sounds robotic, on iPhone go to Settings → Accessibility → Spoken Content → Voices → English and download an “Enhanced” British voice.'));
     main.appendChild(inst);
 
+    main.appendChild(cloudCard());
+
     var bk = el('section', 'card');
     bk.appendChild(el('h2', '', '💾 Backup'));
-    bk.appendChild(el('p', 'muted', 'Your progress lives on this phone only. Save a backup now and then, or to move to a new phone.'));
+    bk.appendChild(el('p', 'muted', 'A copy of your progress in a file or a code, for safekeeping alongside the cloud save.'));
     var row = el('div', 'row-btns');
     row.appendChild(btn('ghost-btn', 'Download backup', function () {
       var a = el('a');
@@ -853,6 +855,87 @@
       catch (e) { APP.toast(e.message || 'That backup did not work.'); }
     }
   });
+
+  // Cloud save: progress copied to the server (api/progress.mjs) so a new phone can get it back.
+  function cloudCard() {
+    var card = el('section', 'card');
+    card.appendChild(el('h2', '', '☁️ Cloud save'));
+    var status = el('p', 'muted');
+    var body = el('div');
+    card.appendChild(status); card.appendChild(body);
+    draw();
+    return card;
+
+    function when(iso) {
+      var d = new Date(iso);
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    }
+    function draw() {
+      body.replaceChildren();
+      if (!S.settings.passcode) {
+        status.textContent = 'Type the passcode (the same one as the AI partner) and your progress is copied to the cloud as you go.';
+        var inp = el('input'); inp.type = 'text'; inp.autocomplete = 'off'; inp.autocapitalize = 'off'; inp.placeholder = 'Passcode';
+        body.appendChild(inp);
+        body.appendChild(btn('ghost-btn', 'Turn on', function () {
+          if (!inp.value.trim()) return;
+          S.settings.passcode = inp.value.trim(); APP.save();
+          check();
+        }));
+        return;
+      }
+      var info = APP.cloudInfo();
+      status.textContent =
+        info.problem === 'passcode' ? '🔑 That passcode didn’t work.' :
+        info.problem === 'off' ? 'Cloud save isn’t set up on the server yet.' :
+        info.problem === 'ahead' ? '⚠️ The cloud has more progress than this phone. Restore it below, or save this phone’s progress over it.' :
+        info.saved ? '✅ Saved to the cloud ' + when(info.saved) + '. It saves by itself as you go.' :
+        'Not saved to the cloud yet.';
+      var row = el('div', 'row-btns');
+      var save = btn('ghost-btn', 'Save now', function () {
+        var force = info.problem === 'ahead';
+        if (force && !save.dataset.sure) { save.dataset.sure = '1'; save.textContent = 'Tap again to replace the cloud copy'; return; }
+        save.disabled = true;
+        APP.cloudSave(force).then(function () { APP.toast('Saved to the cloud ☁️'); }, failed).then(draw);
+      });
+      var load = btn('ghost-btn', 'Restore from cloud', function () {
+        if (!load.dataset.sure) { load.dataset.sure = '1'; load.textContent = 'Tap again: this replaces the progress on this phone'; return; }
+        load.disabled = true;
+        APP.cloud('load').then(function (d) {
+          if (!d.data) { APP.toast('There’s nothing in the cloud yet.'); draw(); return; }
+          d.data.settings = d.data.settings || {};
+          d.data.settings.passcode = S.settings.passcode; // keep the passcode she just typed
+          APP.importData(JSON.stringify(d.data));
+          APP.cloudNote({ saved: d.saved });
+          APP.toast('Restored!');
+          setTimeout(function () { location.reload(); }, 600);
+        }, function (e) { failed(e); draw(); });
+      });
+      row.appendChild(save); row.appendChild(load);
+      body.appendChild(row);
+      if (info.problem === 'passcode') {
+        body.appendChild(btn('ghost-btn small', 'Change passcode', function () { S.settings.passcode = ''; APP.save(); draw(); }));
+      }
+    }
+    // after typing the passcode: if the cloud already has progress, offer it instead of overwriting it
+    function check() {
+      APP.cloud('load').then(function (d) {
+        if (d.data && d.data.xp > S.xp) {
+          APP.cloudNote({ saved: d.saved, problem: 'ahead' });
+          draw();
+        } else {
+          APP.cloudSave().then(function () { APP.toast('Cloud save is on ☁️'); }, failed).then(draw);
+        }
+      }, function (e) {
+        if (e.status === 401) { S.settings.passcode = ''; APP.save(); APP.toast('That passcode didn’t work.'); }
+        else failed(e);
+        draw();
+      });
+    }
+    function failed(e) {
+      APP.toast(e.status === 401 ? 'That passcode didn’t work.' : e.status === 503 ? 'Cloud save isn’t set up on the server yet.' :
+        e.status === 409 ? 'The cloud has more progress than this phone.' : 'Couldn’t reach the cloud. Are you online?');
+    }
+  }
 
   function field(label, control) {
     var f = el('label', 'field');

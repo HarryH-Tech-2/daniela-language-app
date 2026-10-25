@@ -14,13 +14,16 @@ Then open http://localhost:8650. Offline support needs http(s), so opening `inde
 
 ## Deploy (Vercel)
 
-The site itself is static. The one server part is `api/talk.mjs`, the AI conversation partner.
+The site itself is static. The server parts are `api/talk.mjs`, the AI conversation partner, and `api/progress.mjs`, the cloud save.
 
 1. Push the repo to GitHub and import it at vercel.com/new. Framework preset: **Other**. Leave the build command empty and the output directory at the repo root.
 2. In Project → Settings → Environment Variables, add:
    - `ANTHROPIC_API_KEY`: your key from console.anthropic.com.
    - `APP_PASSCODE`: any word you choose. The app asks for it the first time she uses the AI partner, so strangers who find the URL can't spend your credits.
-3. Redeploy so the variables take effect.
+3. For cloud save: Project → Storage → Create Database → **Upstash for Redis** (the free plan is plenty) and connect it to this project. That adds `KV_REST_API_URL` and `KV_REST_API_TOKEN` for you. Cloud save also needs `APP_PASSCODE`.
+4. Redeploy so the variables take effect.
+
+She never logs in to Vercel. The app keeps one copy of her progress in Redis, behind the passcode. It saves 15 seconds after a change and when she leaves the app. On a new phone: Me → Cloud save → type the passcode → Restore from cloud. An automatic save never replaces a cloud copy that has more XP; only "Save now" can.
 
 Or use the CLI: `npx vercel` and then `npx vercel --prod`.
 

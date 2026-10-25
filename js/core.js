@@ -75,6 +75,7 @@
 
   APP.save = function () {
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+    cloudSoon();
   };
   APP.exportData = function () { return JSON.stringify(state); };
   APP.importData = function (text) {
@@ -83,6 +84,47 @@
     localStorage.setItem(KEY, JSON.stringify(s));
   };
   APP.reset = function () { localStorage.removeItem(KEY); };
+
+  /* ---------- cloud copy (api/progress.mjs) ---------- */
+
+  // A copy of the progress lives in the cloud too, behind the same passcode as the
+  // AI partner. It saves itself 15 seconds after the last change, or straight away
+  // when she leaves the app. When it last saved is kept outside the state, so
+  // noting it doesn't count as a change.
+  var CLOUD_KEY = 'dale-cloud', cloudTimer = null;
+  APP.cloudInfo = function () { try { return JSON.parse(localStorage.getItem(CLOUD_KEY)) || {}; } catch (e) { return {}; } };
+  var cloudNote = APP.cloudNote = function (info) { try { localStorage.setItem(CLOUD_KEY, JSON.stringify(info)); } catch (e) {} };
+  APP.cloud = function (action, extra, keepalive) {
+    var body = { passcode: state.settings.passcode || '', action: action };
+    Object.keys(extra || {}).forEach(function (k) { body[k] = extra[k]; });
+    var json = JSON.stringify(body);
+    // keepalive lets the save finish as the app closes, but only for bodies under 64 KB
+    return fetch('api/progress', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: json, keepalive: !!keepalive && json.length < 60000 })
+      .then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (d) {
+          if (r.ok) return d;
+          var e = new Error(d.error || 'http ' + r.status); e.status = r.status; e.body = d; throw e;
+        });
+      });
+  };
+  APP.cloudSave = function (force, keepalive) {
+    clearTimeout(cloudTimer); cloudTimer = null;
+    return APP.cloud('save', { data: state, force: !!force }, keepalive).then(function (d) {
+      cloudNote({ saved: d.saved });
+      return d;
+    }, function (e) {
+      cloudNote({ saved: APP.cloudInfo().saved, problem: e.status === 409 ? 'ahead' : e.status === 401 ? 'passcode' : e.status === 503 ? 'off' : 'offline' });
+      throw e;
+    });
+  };
+  function cloudSoon() {
+    if (!state.settings.passcode || APP.cloudInfo().problem === 'off') return;
+    clearTimeout(cloudTimer);
+    cloudTimer = setTimeout(function () { APP.cloudSave().catch(function () {}); }, 15000);
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden' && cloudTimer) APP.cloudSave(false, true).catch(function () {});
+  });
 
   // Ask the browser not to clear our storage (iOS clears sites it thinks are unused).
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
@@ -354,6 +396,10 @@
 
   /* ---------- feedback: toasts, XP float, celebration, sounds ---------- */
 
+  APP.updateReady = function () {
+    if (document.querySelector('.update-btn')) return;
+    document.body.appendChild(APP.btn('update-btn', '✨ New version ready — tap to update', function () { location.reload(); }));
+  };
   APP.toast = function (msg) {
     var t = APP.el('div', 'toast', msg);
     document.body.appendChild(t);
