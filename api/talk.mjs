@@ -4,9 +4,11 @@
 // Environment variables (Vercel → Project → Settings → Environment Variables):
 //   ANTHROPIC_API_KEY  required
 //   APP_PASSCODE       recommended; the app asks for it once, so strangers can't spend your credits
+//   ANTHROPIC_WORKSPACE_ID  only if the key isn't tied to a workspace (Console → Settings → Workspaces, wrkspc_…)
 import Anthropic from '@anthropic-ai/sdk';
 
-const client = new Anthropic();
+const WORKSPACE = process.env.ANTHROPIC_WORKSPACE_ID;
+const client = new Anthropic(WORKSPACE ? { defaultHeaders: { 'anthropic-workspace-id': WORKSPACE } } : {});
 const MODEL = 'claude-opus-5-5';
 
 const TURN_SCHEMA = {
