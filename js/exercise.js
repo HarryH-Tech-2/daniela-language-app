@@ -55,11 +55,13 @@
       body.classList.add('opts'); if (x.kind === 'tf') body.classList.add('two');
       options.forEach(function (o, i) {
         o.b = APP.btn('opt', o.t, function () {
+          if (x.sayOpts) APP.speak(o.t); // words she can hear: every tap says it, before and after answering
           if (finished) return;
-          options.forEach(function (p) { p.b.disabled = true; if (p.ok) p.b.classList.add('right'); });
+          options.forEach(function (p) { if (!x.sayOpts) p.b.disabled = true; else p.b.classList.add('done'); if (p.ok) p.b.classList.add('right'); });
           if (!o.ok) o.b.classList.add('wrong');
           if (blank) { blank.textContent = x.right; blank.classList.add('filled'); }
           finish(o.ok, x.kind === 'tf' ? '' : 'Answer: ' + x.right);
+          if (x.sayOpts && APP.canSpeak) after.appendChild(el('p', 'ex-why', '🔊 Tap any word to hear it again.'));
         });
         o.b.setAttribute('data-key', String(i + 1));
         body.appendChild(o.b);

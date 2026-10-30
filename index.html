@@ -71,9 +71,14 @@
     APP.start();
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
       window.addEventListener('load', function () {
-        // a page that was already running when a new version took over gets a "tap to update" button
-        var had = !!navigator.serviceWorker.controller;
-        navigator.serviceWorker.addEventListener('controllerchange', function () { if (had) APP.updateReady(); had = true; });
+        // a new version taking over just after she opens the app reloads straight into it;
+        // a page she's already been using gets a "tap to update" button instead
+        var had = !!navigator.serviceWorker.controller, opened = Date.now();
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (had && Date.now() - opened < 8000) location.reload();
+          else if (had) APP.updateReady();
+          had = true;
+        });
         navigator.serviceWorker.register('sw.js').then(function (reg) {
           // iPhone brings the app back without reloading it, so look for a new version each time she returns
           document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') reg.update().catch(function () {}); });

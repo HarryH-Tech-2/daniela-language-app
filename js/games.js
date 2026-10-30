@@ -114,7 +114,7 @@
     var pool = mine.length >= 10 ? mine : all;
     rounds(main, g, APP.pick(pool, 10).map(function (v) {
       var wrong = APP.pick(all.filter(function (o) { return o.w !== v.w; }), 3).map(function (o) { return o.w; });
-      return { kind: 'choice', label: 'What’s in the picture?', image: APP.wordImg(v), q: '', right: v.w, wrong: wrong,
+      return { kind: 'choice', label: 'What’s in the picture?', image: APP.wordImg(v), q: '', right: v.w, wrong: wrong, sayOpts: true,
         why: v.w + ': ' + v.def + ' (🇨🇴 ' + v.es + ')' };
     }), 6);
   }

@@ -390,6 +390,7 @@ textarea { resize: vertical; line-height: 1.5; font-size: 17px; }
 .opts.two .opt { text-align: center; }
 .opt:not(:disabled):active { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
 .opt:disabled { cursor: default; }
+.opt.done:not(.right):not(.wrong) { opacity: 0.75; }
 .opt.right { background: var(--right-bg); border-color: var(--right); box-shadow: 0 4px 0 var(--right); }
 .opt.wrong { background: var(--wrong-bg); border-color: var(--wrong); box-shadow: 0 4px 0 var(--wrong); animation: shake 350ms; }
 .opt.gone { opacity: 0.3; }
