@@ -17,64 +17,86 @@
   // Keeps listening until stop() is called. Safari on iPhone ends recognition at
   // the first pause for breath, so when it ends by itself we start it again and
   // keep adding to the text. Only after a few silent rounds do we give up.
+  //
+  // iPhone often won't open the microphone straight after the partner has been
+  // speaking (or straight after the last time she spoke): the recogniser starts but
+  // hears nothing. So if no sound arrives within a few seconds we quietly start a
+  // fresh one, and only give up after that fails too.
+  var worked = false; // the microphone has heard her at least once on this visit
   APP.listen = function (o) {
-    var said = (o.before || '').trim(), stopped = false, silent = 0, r = null, ended = false, heardAudio = false, dog = null;
+    var said = (o.before || '').trim(), stopped = false, silent = 0, r = null, ended = false, heardAudio = false, dog = null, retried = false;
     function join(a, b) { return (a + ' ' + b).trim(); }
-    // Some iPhone browsers have voice typing but never actually start it, or never
-    // say it has ended. Give up cleanly instead of leaving the mic stuck on.
-    function done() {
+    function finish(byHer) {
       if (ended) return;
       ended = true; clearTimeout(dog);
-      try { r.abort(); } catch (e) {}
-      if (o.onEnd) o.onEnd(said, stopped);
+      var old = r; r = null;
+      try { old.abort(); } catch (e) {}
+      if (o.onEnd) o.onEnd(said, byHer);
     }
-    function broken() {
-      if (ended) return;
-      ended = true; clearTimeout(dog);
-      try { r.abort(); } catch (e) {}
-      APP.canListen = false;
-      APP.toast('Voice typing doesn’t work in this browser. Tap the 🎙️ on your keyboard instead.');
-      if (o.onEnd) o.onEnd(said, false);
+    function deaf() {
+      if (ended || heardAudio) return;
+      if (!retried) { retried = true; fresh(400); return; }
+      if (worked) APP.toast('I couldn’t hear you. Tap 🎙️ to try again.');
+      else {
+        // it has never heard her: this browser has voice typing in name only
+        APP.canListen = false;
+        APP.toast('Voice typing doesn’t work in this browser. Tap the 🎙️ on your keyboard instead.');
+      }
+      finish(false);
+    }
+    function fresh(wait) {
+      var old = r; r = null;
+      try { old.abort(); } catch (e) {}
+      setTimeout(function () {
+        if (ended || stopped) return;
+        try { round(); } catch (e) { deaf(); return; }
+        clearTimeout(dog);
+        dog = setTimeout(deaf, 4000);
+      }, wait);
     }
     function round() {
-      r = new Rec();
-      r.lang = 'en-GB';
-      r.interimResults = true;
-      r.continuous = false; // true repeats words on iPhone; the restart below does the job instead
-      r.maxAlternatives = 1;
-      var heard = '', fatal = false;
-      r.onaudiostart = r.onspeechstart = function () { heardAudio = true; clearTimeout(dog); };
-      r.onresult = function (e) {
-        heardAudio = true; clearTimeout(dog);
+      var me = r = new Rec();
+      me.lang = 'en-GB';
+      me.interimResults = true;
+      me.continuous = false; // true repeats words on iPhone; the restart below does the job instead
+      me.maxAlternatives = 1;
+      var heard = '', fatal = false, began = Date.now();
+      function sound() { if (r !== me) return; heardAudio = worked = true; clearTimeout(dog); }
+      me.onaudiostart = me.onspeechstart = sound;
+      me.onresult = function (e) {
+        if (r !== me) return;
+        sound();
         // rebuild the whole round from the start: iPhone repeats and revises earlier results
         heard = '';
         for (var i = 0; i < e.results.length; i++) heard = join(heard, e.results[i][0].transcript);
         o.onText(join(said, heard));
       };
-      r.onerror = function (e) {
+      me.onerror = function (e) {
+        if (r !== me) return;
         if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { fatal = true; APP.toast('I need permission to use the microphone.'); }
         else if (e.error === 'network') { fatal = true; APP.toast('Voice typing needs internet. You can type instead.'); }
         else if (e.error === 'audio-capture') { fatal = true; APP.toast('The microphone isn’t available right now.'); }
       };
-      r.onend = function () {
-        if (ended) return;
+      me.onend = function () {
+        if (ended || r !== me) return;
         said = join(said, heard);
+        // ended at once without hearing anything: the microphone wasn't ready, try again in a moment
+        if (!stopped && !fatal && !heardAudio && Date.now() - began < 1500 && !retried) { retried = true; fresh(400); return; }
         silent = heard ? 0 : silent + 1;
         if (!stopped && !fatal && silent < 3) {
           try { round(); return; } catch (e) { /* not allowed to restart: fall through */ }
         }
-        done();
+        finish(stopped);
       };
-      r.start();
+      me.start();
     }
     APP.stopSpeaking();
-    try { round(); } catch (e) { setTimeout(broken, 0); }
-    // nothing from the microphone within 6 seconds: this browser isn't really listening
-    dog = setTimeout(function () { if (!heardAudio) broken(); }, 6000);
+    try { round(); } catch (e) { fresh(400); }
+    dog = setTimeout(deaf, 4000);
     return { stop: function () {
       stopped = true;
       try { r.stop(); } catch (e) {}
-      setTimeout(done, 1500); // in case the browser never reports that it stopped
+      setTimeout(function () { finish(true); }, 1500); // in case the browser never reports that it stopped
     } };
   };
 

@@ -793,8 +793,11 @@
     set.appendChild(field('Speaking speed', select([[0.8, 'Slow'], [0.95, 'Normal'], [1.1, 'Fast']], S.settings.rate, function (v) { S.settings.rate = +v; APP.save(); APP.speak('This is how fast I will speak.'); })));
     var vs = APP.voices();
     if (vs.length) {
-      var opts = [['', 'Automatic (British if possible)']].concat(vs.map(function (v) { return [v.name, v.name + ' · ' + v.lang]; }));
+      var stars = ['', '', '★ ', '★★ '];
+      var opts = [['', 'Automatic (most natural)']].concat(vs.map(function (v) { return [v.name, stars[APP.voiceQuality(v)] + v.name + ' · ' + v.lang]; }));
       set.appendChild(field('Voice', select(opts, S.settings.voice, function (v) { APP.setVoice(v); APP.speak('Hello ' + APP.profile.short + ', I will be your voice.'); })));
+      if (!vs.some(function (v) { return APP.voiceQuality(v) >= 2; }))
+        set.appendChild(el('p', 'muted small', 'For a more natural voice on iPhone: Settings → Accessibility → Spoken Content → Voices → English, download a voice marked Enhanced or Premium, then reopen the app.'));
     } else if (APP.canSpeak) {
       set.appendChild(el('p', 'muted small', 'Voices are still loading. Come back to this page in a moment to choose one.'));
     }

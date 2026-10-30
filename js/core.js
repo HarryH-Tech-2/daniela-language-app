@@ -301,20 +301,30 @@
   /* ---------- speech ---------- */
 
   var synth = window.speechSynthesis, voice = null;
+  // How natural a voice sounds: 3 premium, 2 enhanced / neural, 1 standard, 0 robotic.
+  // iPhone names them "Daniel" but says the quality in voiceURI (com.apple.voice.premium.en-GB.Serena).
+  var ROBOTIC = /eloquence|novelty|speech\.synthesis|albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley|fred|junior|ralph|kathy/i;
+  function quality(v) {
+    var id = (v.voiceURI || '') + ' ' + v.name;
+    if (/premium/i.test(id)) return 3;
+    if (/enhanced|neural|natural|online/i.test(id)) return 2;
+    if (ROBOTIC.test(id)) return 0;
+    return 1;
+  }
+  APP.voiceQuality = quality;
+  APP.voices = function () {
+    if (!synth) return [];
+    return synth.getVoices().filter(function (v) { return /^en[-_]/i.test(v.lang); })
+      .sort(function (a, b) { return quality(b) - quality(a) || (/GB/i.test(b.lang) - /GB/i.test(a.lang)); });
+  };
   function pickVoice() {
     if (!synth) return;
-    var vs = synth.getVoices().filter(function (v) { return /^en[-_]/i.test(v.lang); });
+    var vs = APP.voices();
     var chosen = vs.filter(function (v) { return v.name === state.settings.voice; })[0];
-    if (!chosen) {
-      // prefer a British voice, then a good-quality one, then anything English
-      var gb = vs.filter(function (v) { return /GB/i.test(v.lang); });
-      var nice = function (list) { return list.filter(function (v) { return /enhanced|premium|natural|google|serena|daniel|kate|libby|sonia|ryan/i.test(v.name); })[0]; };
-      chosen = nice(gb) || gb[0] || nice(vs) || vs[0] || null;
-    }
-    voice = chosen;
+    // otherwise the most natural one, British first when it's just as good
+    voice = chosen || vs[0] || null;
   }
   if (synth) { pickVoice(); synth.onvoiceschanged = pickVoice; }
-  APP.voices = function () { return synth ? synth.getVoices().filter(function (v) { return /^en[-_]/i.test(v.lang); }) : []; };
   APP.setVoice = function (name) { state.settings.voice = name; APP.save(); pickVoice(); };
   APP.canSpeak = !!synth;
   var current = null; // keep a reference: Safari drops events for utterances it has let go of
