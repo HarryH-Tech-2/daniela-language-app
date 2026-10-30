@@ -283,7 +283,9 @@
           scenario: { setting: t.setting, you: t.you, them: t.them, name: t.name, goal: t.goal, ai: t.ai, level: APP.STAGES[t.stage].label } })
       }).then(function (r) {
         if (r.ok) return r.json();
-        var e = new Error('http ' + r.status); e.status = r.status; throw e;
+        return r.json().catch(function () { return {}; }).then(function (body) {
+          var e = new Error('http ' + r.status); e.status = r.status; e.why = body.error || ''; throw e;
+        });
       });
     }
     function aiTurn(text, mineB) {
@@ -308,8 +310,13 @@
         busy = false;
         history.pop();
         if (e.status === 401) { askPasscode(function () { aiTurn(text, mineB); }); return; }
-        var msg = e.status === 429 ? 'The AI partner is busy right now.' : 'The AI partner isn’t available (no internet, or it isn’t set up yet).';
+        var msg = e.status === 429 ? 'The AI partner is busy right now.'
+          : !e.status ? 'The AI partner needs internet, and I can’t reach it.'
+          : e.status === 503 ? 'The AI partner isn’t set up on the server yet.'
+          : 'The AI partner had a problem.';
         var n = note(mineB, 'try', [el('p', '', msg + ' Let’s continue with the practice script instead.')]);
+        // the exact reason, small, so we can tell what went wrong
+        n.appendChild(el('p', 'muted small', 'Reason: ' + (e.status ? e.status + (e.why ? ' ' + e.why : '') : 'no connection')));
         ai = false;
         modeTag.textContent = '📜 Practice script';
         // pick the script up from roughly the same point
