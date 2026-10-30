@@ -114,7 +114,11 @@ export default async function handler(req, res) {
     return res.status(200).json(JSON.parse(text));
   } catch (err) {
     if (err instanceof Anthropic.RateLimitError) return res.status(429).json({ error: 'busy' });
-    if (err instanceof Anthropic.APIError) return res.status(502).json({ error: 'upstream ' + (err.status || '') });
+    if (err instanceof Anthropic.APIError) {
+      // passed back so the app (behind the passcode) can show what went wrong
+      console.error('Claude API error', err.status, err.message);
+      return res.status(502).json({ error: 'upstream ' + (err.status || ''), detail: String(err.message || '').slice(0, 300) });
+    }
     if (err instanceof SyntaxError) return res.status(502).json({ error: 'bad reply' });
     return res.status(500).json({ error: 'failed' });
   }
