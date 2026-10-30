@@ -3,7 +3,7 @@
 //
 // When you add a file, add it to FILES and bump VERSION so installed copies pick it up.
 // `node test/files.test.js` checks that every unit in index.html is listed here.
-var VERSION = 'v6';
+var VERSION = 'v7';
 var CACHE = 'dale-' + VERSION;
 var FONT_CACHE = 'dale-fonts';
 var IMG_CACHE = 'dale-img'; // pictures never change name, so they live outside VERSION

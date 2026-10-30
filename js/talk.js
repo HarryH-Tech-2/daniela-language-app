@@ -18,8 +18,24 @@
   // the first pause for breath, so when it ends by itself we start it again and
   // keep adding to the text. Only after a few silent rounds do we give up.
   APP.listen = function (o) {
-    var said = (o.before || '').trim(), stopped = false, silent = 0, r = null;
+    var said = (o.before || '').trim(), stopped = false, silent = 0, r = null, ended = false, heardAudio = false, dog = null;
     function join(a, b) { return (a + ' ' + b).trim(); }
+    // Some iPhone browsers have voice typing but never actually start it, or never
+    // say it has ended. Give up cleanly instead of leaving the mic stuck on.
+    function done() {
+      if (ended) return;
+      ended = true; clearTimeout(dog);
+      try { r.abort(); } catch (e) {}
+      if (o.onEnd) o.onEnd(said, stopped);
+    }
+    function broken() {
+      if (ended) return;
+      ended = true; clearTimeout(dog);
+      try { r.abort(); } catch (e) {}
+      APP.canListen = false;
+      APP.toast('Voice typing doesn’t work in this browser. Tap the 🎙️ on your keyboard instead.');
+      if (o.onEnd) o.onEnd(said, false);
+    }
     function round() {
       r = new Rec();
       r.lang = 'en-GB';
@@ -27,7 +43,9 @@
       r.continuous = false; // true repeats words on iPhone; the restart below does the job instead
       r.maxAlternatives = 1;
       var heard = '', fatal = false;
+      r.onaudiostart = r.onspeechstart = function () { heardAudio = true; clearTimeout(dog); };
       r.onresult = function (e) {
+        heardAudio = true; clearTimeout(dog);
         // rebuild the whole round from the start: iPhone repeats and revises earlier results
         heard = '';
         for (var i = 0; i < e.results.length; i++) heard = join(heard, e.results[i][0].transcript);
@@ -39,18 +57,25 @@
         else if (e.error === 'audio-capture') { fatal = true; APP.toast('The microphone isn’t available right now.'); }
       };
       r.onend = function () {
+        if (ended) return;
         said = join(said, heard);
         silent = heard ? 0 : silent + 1;
         if (!stopped && !fatal && silent < 3) {
           try { round(); return; } catch (e) { /* not allowed to restart: fall through */ }
         }
-        if (o.onEnd) o.onEnd(said, stopped);
+        done();
       };
       r.start();
     }
     APP.stopSpeaking();
-    round();
-    return { stop: function () { stopped = true; try { r.stop(); } catch (e) {} } };
+    try { round(); } catch (e) { setTimeout(broken, 0); }
+    // nothing from the microphone within 6 seconds: this browser isn't really listening
+    dog = setTimeout(function () { if (!heardAudio) broken(); }, 6000);
+    return { stop: function () {
+      stopped = true;
+      try { r.stop(); } catch (e) {}
+      setTimeout(done, 1500); // in case the browser never reports that it stopped
+    } };
   };
 
   /* ---------- the list ---------- */
