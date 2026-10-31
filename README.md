@@ -14,7 +14,7 @@ Then open http://localhost:8650. Offline support needs http(s), so opening `inde
 
 ## Deploy (Vercel)
 
-The site itself is static. The server parts are `api/talk.mjs`, the AI conversation partner, and `api/progress.mjs`, the cloud save.
+The site itself is static. The server parts are `api/talk.mjs`, the AI conversation partner, `api/review.mjs`, which checks journal entries for mistakes, and `api/progress.mjs`, the cloud save.
 
 1. Push the repo to GitHub and import it at vercel.com/new. Framework preset: **Other**. Leave the build command empty and the output directory at the repo root.
 2. In Project → Settings → Environment Variables, add:
@@ -61,7 +61,7 @@ Progress lives only on her phone. Me → Backup downloads a file she can restore
   - With the AI partner, the conversation is free-flowing and she gets one gentle correction per turn and "How did I do?" feedback at the end.
   - Without it, she gets a scripted conversation that suggests better answers.
 - **Pictures** (`img/`, made by `tools/images.py`): 22 story scenes and 96 word pictures (2.2 MB, WebP). They're cached for offline use after the first visit. They appear on word cards, stories, flashcards, the word of the day, the tap-a-word pop-up and the "Picture this" game. To add one, put a prompt in `tools/images.py`, generate `img/raw/<id>.png`, then run `python tools/images.py build`.
-- **Journal:** her writing from each lesson, plus free writing with a prompt of the day.
+- **Journal:** her writing from each lesson, plus free writing with a prompt of the day. "✨ Check my English" on any entry (`js/review.js`, `api/review.mjs`) crosses out each mistake, shows the fix beside it with a short reason, and gives a corrected version; the result is saved with the entry.
 - **Me:** her estimated CEFR level, XP and levels, daily goal, streak (with streak freezes), badges, voice, speed and sound settings, and backup/restore.
 - Read-aloud uses the phone's own voices (British if there is one), so it works offline. Recording uses the microphone and stays on the phone.
 

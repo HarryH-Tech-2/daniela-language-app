@@ -720,6 +720,7 @@
       });
       row.appendChild(del);
       d.appendChild(row);
+      d.appendChild(APP.reviewBox(j));
       main.appendChild(d);
     });
   });

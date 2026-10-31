@@ -480,6 +480,27 @@ textarea { resize: vertical; line-height: 1.5; font-size: 17px; }
 .entry-prompt { color: var(--ink-2); font-style: italic; margin-top: 10px; }
 .entry-acts { display: flex; gap: 8px; flex-wrap: wrap; }
 
+/* ---------- journal: check my English ---------- */
+.review-box { margin-top: 12px; }
+.review-go { margin-top: 4px; }
+.review { border-top: 2px dashed var(--line); padding-top: 12px; }
+.review-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.review-head h3 { margin: 0; }
+.review-level { font-size: 13px; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: var(--bg-2); color: var(--ink-2); }
+.review-summary { color: var(--ink-2); }
+.review-text { line-height: 1.9; }
+.err { white-space: normal; }
+.err-wrong { color: var(--wrong, #e5484d); text-decoration: line-through; text-decoration-thickness: 2px; background: var(--wrong-bg, rgba(229, 72, 77, 0.12)); border-radius: 4px; padding: 0 2px; }
+.err-right { color: var(--sea-d); text-decoration: none; font-weight: 700; background: var(--right-bg); border-radius: 4px; padding: 0 3px; margin-left: 3px; }
+.err-n { font-size: 11px; font-weight: 800; color: var(--ink-2); margin-left: 1px; }
+.review-list { padding-left: 22px; margin: 10px 0; }
+.review-list li { margin-bottom: 10px; }
+.review-fix { margin: 0; }
+.review-why { margin: 2px 0 0; font-size: 14px; color: var(--ink-2); }
+.review-kind { margin-left: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); }
+.review-corrected summary { cursor: pointer; font-weight: 800; }
+@media (prefers-color-scheme: dark) { .err-right { color: #7ff0d8; } }
+
 /* ---------- me ---------- */
 
 .me-head h1 { margin-bottom: 0; }
