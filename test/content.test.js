@@ -156,6 +156,33 @@ if (fs.existsSync(gamesFile)) {
   }
 }
 
+var everyFile = path.join(root, 'data/everyday.js');
+if (fs.existsSync(everyFile)) {
+  var E;
+  try { E = load(everyFile).EVERYDAY; } catch (e) { err('everyday.js', 'does not run: ' + e.message); }
+  if (E) {
+    var allP = {};
+    E.forEach(function (g, gi) {
+      var gat = 'everyday[' + (g.id || gi) + ']';
+      ['id', 'icon', 'title', 'short', 'intro'].forEach(function (f) { if (!str(g[f])) err(gat, 'needs ' + f); });
+      if (!Array.isArray(g.items) || g.items.length < 12) { err(gat, 'needs 12+ items (the quiz uses 12)'); return; }
+      var ps = g.items.map(function (v) { return v.p; }), firstEs = {};
+      g.items.forEach(function (v, i) {
+        var at = gat + '.items[' + i + ']';
+        ['p', 'def', 'es', 'ex'].forEach(function (f) { if (!str(v[f])) err(at, 'needs ' + f); });
+        if (v.note !== undefined && !str(v.note)) err(at, 'note must be a string');
+        var key = String(v.p).toLowerCase();
+        if (allP[key]) err(at, 'duplicate ' + v.p); allP[key] = 1;
+        var es1 = String(v.es).split(' / ')[0];
+        if (firstEs[es1]) err(at, 'same Spanish as another item: ' + es1); firstEs[es1] = 1;
+        (v.near || []).forEach(function (n) { if (ps.indexOf(n) < 0) err(at, 'near lists ' + n + ', which is not in this group'); });
+        var left = g.items.filter(function (o) { return o !== v && (v.near || []).indexOf(o.p) < 0 && (o.near || []).indexOf(v.p) < 0; });
+        if (left.length < 3) err(at, 'fewer than 3 wrong options left after near');
+      });
+    });
+  }
+}
+
 warnings.forEach(function (w) { console.log('warn  ' + w); });
 errors.forEach(function (e) { console.log('ERROR ' + e); });
 console.log(files.length + ' unit file(s) checked, ' + errors.length + ' error(s), ' + warnings.length + ' warning(s).');

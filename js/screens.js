@@ -125,6 +125,19 @@
     quick.appendChild(tile('#/journal', '✍️', 'My journal', S.journal.length + ' entr' + (S.journal.length === 1 ? 'y' : 'ies')));
     main.appendChild(quick);
 
+    var ev = (window.EVERYDAY || []).reduce(function (n, x) { return n + x.items.length; }, 0);
+    if (ev) {
+      var evl = el('a', 'qtile everyday-link');
+      evl.href = '#/everyday';
+      evl.appendChild(el('span', 'qtile-i', '💬'));
+      var evt = el('span', 'everyday-link-text');
+      evt.appendChild(el('span', 'qtile-t', 'Everyday English'));
+      evt.appendChild(el('span', 'qtile-s', ev + ' phrasal verbs, reactions and idioms natives use all the time'));
+      evl.appendChild(evt);
+      evl.appendChild(el('span', 'everyday-link-go', '›'));
+      main.appendChild(evl);
+    }
+
     // the path
     var path = el('section', 'path');
     path.id = 'path';

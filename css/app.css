@@ -242,6 +242,12 @@ textarea { resize: vertical; line-height: 1.5; font-size: 17px; }
 .qtile-i { font-size: 28px; }
 .qtile-t { font-weight: 800; }
 .qtile-s { font-size: 13px; color: var(--ink-2); }
+.everyday-link { flex-direction: row; align-items: center; gap: 12px; margin: -10px 0 22px; }
+.everyday-link-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.everyday-link-go { font-size: 26px; font-weight: 800; color: var(--pink); }
+.everyday-title { margin: 4px 0 2px; }
+.view-everyday .big-btn { margin: 4px 0 16px; }
+.vcard-note { margin: 8px 0 0; font-size: 14px; color: var(--ink-2); }
 
 /* the path */
 .stage {

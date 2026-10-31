@@ -89,3 +89,21 @@ window.GAMES = {
   rescue:       [ { w: 'lawyer', clue: 'a person whose job is to give legal advice' } ]
 };
 ```
+
+## Everyday English: `data/everyday.js`
+
+Phrasal verbs, reactions and idioms, browsed at `#/everyday` and quizzed at `#/game/everyday/<group>`.
+
+```js
+window.EVERYDAY = [
+  { id: 'phrasal', icon: '🧲', title: 'Phrasal verbs', short: 'Phrasal verbs', intro: 'One or two sentences.',
+    items: [                                   // 12+ per group (a quiz uses 12)
+      { p: 'figure out', def: 'understand or solve something after thinking about it',
+        es: 'entender / descifrar',            // alternatives split by ' / '; the first is used in the match board
+        ex: "I can't figure out how to change the language on this phone.",
+        note: 'Optional usage tip.',           // optional
+        near: ['work out'] }                   // optional: items in the same group that mean nearly the same,
+                                               // so the quiz never offers them as wrong answers to each other
+    ] }
+];
+```

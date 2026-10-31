@@ -12,6 +12,7 @@
     { id: 'sounds', icon: '👂', name: 'Ship or sheep?', desc: 'Train your ear for tricky sounds.', need: 'pairs' },
     { id: 'idioms', icon: '🌶️', name: 'Idioms', desc: 'Raining cats and dogs? Learn what it means.', need: 'idioms' },
     { id: 'phrasal', icon: '🧲', name: 'Phrasal match', desc: 'Match phrasal verbs to their meaning.', need: 'phrasal' },
+    { id: 'everyday', icon: '💬', name: 'Everyday English', desc: 'Phrasal verbs, reactions and idioms natives use all the time.', need: 'everyday' },
     { id: 'memory', icon: '🃏', name: 'Memory', desc: 'Find the English and Spanish pairs.' },
     { id: 'dictation', icon: '🎧', name: 'Dictation', desc: 'Listen and write the sentence.' }
   ];
@@ -24,6 +25,7 @@
     var grid = el('section', 'games');
     LIST.forEach(function (g) {
       if (g.need === 'pics') { if (picWords().length < 8) return; }
+      else if (g.need === 'everyday') { if (!EVERY.length) return; }
       else if (g.need && !(G[g.need] || []).length) return;
       var a = el('a', 'game-card');
       a.href = '#/game/' + g.id;
@@ -42,7 +44,7 @@
     if (!g) { APP.go('#/games'); return; }
     APP.backBar(main, '#/games', g.icon + ' ' + g.name);
     ({ pictures: pictures, friends: friends, fixit: fixit, speed: speed, rescue: rescue, sounds: sounds, idioms: idioms,
-      phrasal: phrasal, memory: memory, dictation: dictation })[g.id](main, g);
+      phrasal: phrasal, everyday: everyday, memory: memory, dictation: dictation })[g.id](main, g, args.slice(1));
   });
 
   function record(id, score) {
@@ -59,7 +61,7 @@
 
   /* ---------- a run of rounds ---------- */
 
-  function rounds(main, g, items, xpEach) {
+  function rounds(main, g, items, xpEach, again) {
     var i = 0, right = 0;
     var bar = el('div', 'pbar'), fill = el('span', 'pbar-fill');
     bar.appendChild(fill);
@@ -86,7 +88,7 @@
     function end() {
       record(g.id, right);
       if (right === items.length) APP.confetti();
-      host.replaceChildren(scoreCard(right + ' / ' + items.length, right === items.length ? '¡Perfecto, ' + APP.profile.short + '!' : right >= items.length * 0.7 ? 'Really good!' : 'Keep playing, it gets easier.', '#/game/' + g.id));
+      host.replaceChildren(scoreCard(right + ' / ' + items.length, right === items.length ? '¡Perfecto, ' + APP.profile.short + '!' : right >= items.length * 0.7 ? 'Really good!' : 'Keep playing, it gets easier.', again || '#/game/' + g.id));
     }
     next();
   }
@@ -144,6 +146,34 @@
     var picked = APP.pick(G.phrasal, 15), boards = [];
     for (var i = 0; i < 3; i++) boards.push({ kind: 'match', label: 'Match each phrasal verb to its meaning (' + (i + 1) + '/3)', pairs: picked.slice(i * 5, i * 5 + 5).map(function (p) { return [p.pv, p.def]; }) });
     rounds(main, g, boards, 15);
+  }
+
+  /* ---------- Everyday English: one group from data/everyday.js, or all of them ---------- */
+
+  var EVERY = window.EVERYDAY || [];
+  function everyday(main, g, args) {
+    var grp = EVERY.filter(function (x) { return x.id === args[0]; })[0];
+    var groups = grp ? [grp] : EVERY;
+    if (grp) main.appendChild(el('p', 'muted', grp.icon + ' ' + grp.title));
+    var all = [];
+    groups.forEach(function (x) { x.items.forEach(function (v) { all.push({ v: v, grp: x }); }); });
+    var picked = APP.pick(all, 12), qs = picked.slice(0, 8).map(function (it, i) {
+      var v = it.v, wrong = APP.pick(others(it), 3);
+      var why = v.p + ': ' + v.def + '. “' + v.ex.replace(/^“|”$/g, '') + '” 🇨🇴 ' + v.es;
+      return i % 2
+        ? { kind: 'choice', label: 'Which one means…', q: v.def, right: v.p, wrong: wrong.map(function (o) { return o.p; }), why: why }
+        : { kind: 'choice', label: 'What does it mean?', q: '“' + v.p + '”', right: v.def, wrong: wrong.map(function (o) { return o.def; }), why: why };
+    });
+    // a board matching four more to their Spanish
+    qs.push({ kind: 'match', label: 'Match each one to its Spanish', pairs: picked.slice(8, 12).map(function (it) { return [it.v.p, it.v.es.split(' / ')[0]]; }) });
+    rounds(main, g, qs, 8, '#/game/everyday' + (grp ? '/' + grp.id : ''));
+  }
+  // wrong options: others from the same group, never one that means nearly the same
+  function others(it) {
+    var v = it.v;
+    return it.grp.items.filter(function (o) {
+      return o !== v && (v.near || []).indexOf(o.p) < 0 && (o.near || []).indexOf(v.p) < 0;
+    });
   }
 
   function dictation(main, g) {
