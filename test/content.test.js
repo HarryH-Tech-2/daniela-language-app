@@ -183,6 +183,43 @@ if (fs.existsSync(everyFile)) {
   }
 }
 
+var songFile = path.join(root, 'data/songs.js');
+if (fs.existsSync(songFile)) {
+  var SG;
+  try { SG = load(songFile).SONGS; } catch (e) { err('songs.js', 'does not run: ' + e.message); }
+  if (SG) {
+    var QUAL = /^[A-G][#b]?(|m|7|maj7|m7|6|m6|9|m9|add9|sus4|7sus4|m7b5|dim)$/, ids = {}, allW = {}, allEs = {};
+    SG.forEach(function (s, si) {
+      var at = 'songs[' + (s.id || si) + ']';
+      ['id', 'style', 'emoji', 'title', 'by', 'key', 'intro'].forEach(function (f) { if (!str(s[f])) err(at, 'needs ' + f); });
+      if (ids[s.id]) err(at, 'duplicate id'); ids[s.id] = 1;
+      if (['calm', 'samba', 'salsa'].indexOf(s.style) < 0) err(at, 'style must be calm, samba or salsa');
+      if (!(s.bpm >= 50 && s.bpm <= 140)) err(at, 'bpm should be 50-140');
+      if (!Array.isArray(s.chords) || !s.chords.length) err(at, 'needs chords');
+      else s.chords.forEach(function (c) { if (!QUAL.test(c)) err(at, 'unknown chord ' + c); });
+      var lines = [];
+      (s.parts || []).forEach(function (p, pi) {
+        if (!str(p.part) || !Array.isArray(p.lines) || !p.lines.length || !p.lines.every(str)) err(at + '.parts[' + pi + ']', 'needs part and lines');
+        else lines = lines.concat(p.lines);
+      });
+      if (lines.length < 12) err(at, 'needs 12+ lines');
+      lines.forEach(function (l) { if (words(l) > 16) warn(at, 'long line (hard to sing or read in time): ' + l); });
+      var text = lines.join('\n').toLowerCase();
+      if (!Array.isArray(s.words) || s.words.length < 5) err(at, 'needs 5+ words (the quiz uses them)');
+      else s.words.forEach(function (v, i) {
+        var wat = at + '.words[' + i + ']';
+        ['w', 'in', 'def', 'es'].forEach(function (f) { if (!str(v[f])) err(wat, 'needs ' + f); });
+        if (str(v.in) && text.indexOf(v.in.toLowerCase()) < 0) err(wat, '“' + v.in + '” is not in the lyrics');
+        var k = String(v.w).toLowerCase();
+        if (allW[k]) err(wat, 'duplicate word ' + v.w); allW[k] = 1;
+        var es1 = String(v.es).split(' / ')[0];
+        if (allEs[es1]) err(wat, 'same Spanish as another word: ' + es1); allEs[es1] = 1;
+      });
+      if (!Array.isArray(s.notes) || s.notes.length < 2 || !s.notes.every(function (n) { return str(n.h) && str(n.t); })) err(at, 'needs 2+ notes with h and t');
+    });
+  }
+}
+
 warnings.forEach(function (w) { console.log('warn  ' + w); });
 errors.forEach(function (e) { console.log('ERROR ' + e); });
 console.log(files.length + ' unit file(s) checked, ' + errors.length + ' error(s), ' + warnings.length + ' warning(s).');

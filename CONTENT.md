@@ -55,6 +55,26 @@ One file per unit. Each file is exactly:
 });
 ```
 
+## Songs: `data/songs.js`
+
+Original lyrics only (never real songs: they're copyrighted). The music is made in the browser by
+`js/music.js` from `style`, `bpm` and `chords`, so there are no audio files.
+
+```js
+{ id: 'slow-tide', style: 'calm',        // calm | samba | salsa
+  emoji: '🌊', title: 'Slow Tide', by: 'Marea',   // a made-up band
+  bpm: 68,                                // calm ~65-75, samba and salsa ~85-95 (each line lasts 2 bars)
+  key: 'D', chords: ['Dmaj7', 'Bm7', 'Gmaj7', 'A7sus4'],   // one chord per bar, looped
+  intro: 'One or two sentences: what the song is about and what to listen for.',
+  parts: [{ part: 'Verse 1', lines: ['…', '…'] }, { part: 'Chorus', lines: [] }],   // 12+ lines in all, ≤16 words each
+  words: [{ w: 'take stock', in: 'taking stock', def: '…', es: 'hacer balance' }],  // 5+; `in` is the exact text in the lyrics
+  notes: [{ h: 'Inversion', t: 'The grammar point, with the line from the song.' }]   // 2+
+}
+```
+
+Chord types: major, `m`, `7`, `maj7`, `m7`, `6`, `m6`, `9`, `m9`, `add9`, `sus4`, `7sus4`, `m7b5`, `dim`.
+The song quiz (`#/game/songs/<id>`) blanks each word's `in` out of its line, so keep every `in` distinct.
+
 ## Exercise kinds
 
 Every exercise may have `why`: one or two sentences explaining the answer. Give one almost always:

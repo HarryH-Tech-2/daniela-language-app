@@ -484,7 +484,7 @@
     main.replaceChildren();
     main.className = 'view view-' + parts[0];
     document.querySelectorAll('.nav a').forEach(function (a) {
-      a.classList.toggle('on', a.getAttribute('data-r') === (parts[0] === 'unit' || parts[0] === 'everyday' ? 'home' : parts[0] === 'game' ? 'games' : parts[0]));
+      a.classList.toggle('on', a.getAttribute('data-r') === (parts[0] === 'unit' || parts[0] === 'everyday' || parts[0] === 'songs' ? 'home' : parts[0] === 'game' ? 'games' : parts[0]));
     });
     fn(main, parts.slice(1));
     window.scrollTo(0, 0);

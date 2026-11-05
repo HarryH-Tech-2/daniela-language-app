@@ -13,6 +13,7 @@
     { id: 'idioms', icon: '🌶️', name: 'Idioms', desc: 'Raining cats and dogs? Learn what it means.', need: 'idioms' },
     { id: 'phrasal', icon: '🧲', name: 'Phrasal match', desc: 'Match phrasal verbs to their meaning.', need: 'phrasal' },
     { id: 'everyday', icon: '💬', name: 'Everyday English', desc: 'Phrasal verbs, reactions and idioms natives use all the time.', need: 'everyday' },
+    { id: 'songs', icon: '🎵', name: 'Song quiz', desc: 'Fill the missing words in the songs.', need: 'songs' },
     { id: 'memory', icon: '🃏', name: 'Memory', desc: 'Find the English and Spanish pairs.' },
     { id: 'dictation', icon: '🎧', name: 'Dictation', desc: 'Listen and write the sentence.' }
   ];
@@ -26,6 +27,7 @@
     LIST.forEach(function (g) {
       if (g.need === 'pics') { if (picWords().length < 8) return; }
       else if (g.need === 'everyday') { if (!EVERY.length) return; }
+      else if (g.need === 'songs') { if (!(window.SONGS || []).length) return; }
       else if (g.need && !(G[g.need] || []).length) return;
       var a = el('a', 'game-card');
       a.href = '#/game/' + g.id;
@@ -44,7 +46,7 @@
     if (!g) { APP.go('#/games'); return; }
     APP.backBar(main, '#/games', g.icon + ' ' + g.name);
     ({ pictures: pictures, friends: friends, fixit: fixit, speed: speed, rescue: rescue, sounds: sounds, idioms: idioms,
-      phrasal: phrasal, everyday: everyday, memory: memory, dictation: dictation })[g.id](main, g, args.slice(1));
+      phrasal: phrasal, everyday: everyday, songs: songs, memory: memory, dictation: dictation })[g.id](main, g, args.slice(1));
   });
 
   function record(id, score) {
@@ -174,6 +176,44 @@
     return it.grp.items.filter(function (o) {
       return o !== v && (v.near || []).indexOf(o.p) < 0 && (o.near || []).indexOf(v.p) < 0;
     });
+  }
+
+  /* ---------- Song quiz: the missing words from one song's lyrics, or from all of them ---------- */
+
+  function songs(main, g, args) {
+    var all = window.SONGS || [];
+    var song = all.filter(function (s) { return s.id === args[0]; })[0];
+    var list = song ? [song] : all;
+    if (song) {
+      var head = el('p', 'muted', song.emoji + ' ' + song.title + ' · ');
+      var back = el('a', '', 'listen again');
+      back.href = '#/songs/' + song.id;
+      head.appendChild(back);
+      main.appendChild(head);
+    }
+    var items = [];
+    list.forEach(function (s) {
+      var lines = APP.songLines(s);
+      s.words.forEach(function (v) {
+        var line = lines.filter(function (l) { return l.text.toLowerCase().indexOf(v.in.toLowerCase()) >= 0; })[0];
+        if (line) items.push({ v: v, s: s, line: line.text });
+      });
+    });
+    var picked = APP.pick(items, song ? Math.min(8, items.length) : 10);
+    var qs = picked.map(function (it) {
+      var at = it.line.toLowerCase().indexOf(it.v.in.toLowerCase()), right = it.line.substr(at, it.v.in.length);
+      var cap = at === 0 || /[.!?“"]\s*$/.test(it.line.slice(0, at));
+      var pool = it.s.words.length >= 4 ? it.s.words : items.map(function (o) { return o.v; });
+      var wrong = APP.pick(pool.filter(function (o) { return o.in.toLowerCase() !== it.v.in.toLowerCase(); }), 3).map(function (o) {
+        var w = o.in;
+        return cap ? w.charAt(0).toUpperCase() + w.slice(1) : (/^I[ ’']/.test(w) ? w : w.charAt(0).toLowerCase() + w.slice(1));
+      });
+      return { kind: 'gap', label: '🎵 ' + it.s.title + ': which words are missing?', text: it.line.slice(0, at) + '{gap}' + it.line.slice(at + it.v.in.length), right: right, wrong: wrong,
+        why: it.v.w + ': ' + it.v.def + ' 🇨🇴 ' + it.v.es };
+    });
+    var board = APP.pick(items.filter(function (it) { return picked.indexOf(it) < 0; }).concat(picked), 4);
+    qs.push({ kind: 'match', label: 'Match each expression to its Spanish', pairs: board.map(function (it) { return [it.v.w, it.v.es.split(' / ')[0]]; }) });
+    rounds(main, g, qs, 8, '#/game/songs' + (song ? '/' + song.id : ''));
   }
 
   function dictation(main, g) {

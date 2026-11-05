@@ -138,6 +138,19 @@
       main.appendChild(evl);
     }
 
+    var songs = window.SONGS || [];
+    if (songs.length) {
+      var sl = el('a', 'qtile everyday-link');
+      sl.href = '#/songs';
+      sl.appendChild(el('span', 'qtile-i', '🎵'));
+      var st = el('span', 'everyday-link-text');
+      st.appendChild(el('span', 'qtile-t', 'Songs'));
+      st.appendChild(el('span', 'qtile-s', songs.length + ' calm, samba and salsa songs with C1 lyrics to sing along to'));
+      sl.appendChild(st);
+      sl.appendChild(el('span', 'everyday-link-go', '›'));
+      main.appendChild(sl);
+    }
+
     // the path
     var path = el('section', 'path');
     path.id = 'path';
@@ -357,6 +370,7 @@
     pop.style.left = x + 'px'; pop.style.top = y + 'px';
     APP.speak(v.w);
   }
+  APP.showGloss = showGloss;
   document.addEventListener('click', function () { if (pop) { pop.remove(); pop = null; } });
   window.addEventListener('hashchange', function () { if (pop) { pop.remove(); pop = null; } });
 
