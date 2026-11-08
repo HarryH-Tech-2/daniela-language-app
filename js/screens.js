@@ -145,11 +145,15 @@
       sl.appendChild(el('span', 'qtile-i', '🎵'));
       var st = el('span', 'everyday-link-text');
       st.appendChild(el('span', 'qtile-t', 'Songs'));
-      st.appendChild(el('span', 'qtile-s', songs.length + ' calm, samba and salsa songs with C1 lyrics to sing along to'));
+      var sung = songs.filter(function (s) { return s.audio; }).length;
+      st.appendChild(el('span', 'qtile-s', (sung ? sung + ' sung salsa and bossa nova songs to learn new words, plus ' + (songs.length - sung) + ' more' : songs.length + ' calm, samba and salsa songs with C1 lyrics to sing along to')));
       sl.appendChild(st);
       sl.appendChild(el('span', 'everyday-link-go', '›'));
       main.appendChild(sl);
     }
+    if (APP.listWords.length) main.appendChild(homeLink('#/words', '📗', 'B2 word list', APP.listWords.length + ' words and phrases like “beyond”, “despite” and “whereas”'));
+    var ex = window.EXPLAIN || [];
+    if (ex.length) main.appendChild(homeLink('#/explain', '🤔', 'Explanations', ex.length + ' “but why?” questions about English, answered simply'));
 
     // the path
     var path = el('section', 'path');
@@ -190,6 +194,18 @@
 
     if (!APP.units.length) main.appendChild(el('p', 'muted', 'No lessons found. Check the data/units folder.'));
   });
+
+  function homeLink(href, icon, title, sub) {
+    var a = el('a', 'qtile everyday-link');
+    a.href = href;
+    a.appendChild(el('span', 'qtile-i', icon));
+    var t = el('span', 'everyday-link-text');
+    t.appendChild(el('span', 'qtile-t', title));
+    t.appendChild(el('span', 'qtile-s', sub));
+    a.appendChild(t);
+    a.appendChild(el('span', 'everyday-link-go', '›'));
+    return a;
+  }
 
   // "v3 · updated 25 Oct, 16:12" in the top corner, so we can tell which copy she has.
   function version() {

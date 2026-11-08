@@ -309,5 +309,220 @@ window.SONGS = [
       { h: 'Be that as it may', t: 'A formal way to say “even so”. It accepts what was just said, then disagrees or moves on. Perfect for C1 essays.' },
       { h: 'And yet', t: '“And yet here I am” adds a surprising contrast, a bit stronger than “but”. It often starts the sentence.' }
     ]
+  },
+
+  // ------------------------------------------------ sung (ElevenLabs recordings)
+  // These have a real recording in audio/songs/<id>.mp3, made by tools/songs.mjs from
+  // `sound` and the lyrics. The same tool times each line (data/song-times.js).
+
+  {
+    id: 'beyond-the-river', style: 'salsa', emoji: '🌅', title: 'Beyond the River', by: 'Conjunto Brisa',
+    level: 'B2', audio: 'audio/songs/beyond-the-river.mp3',
+    sound: ['salsa', 'Afro-Cuban dance music', 'bright brass section with trumpets and trombones', 'piano montuno', 'congas, timbales and cowbell', 'clave rhythm', 'warm female lead vocal singing in English', 'clearly enunciated lyrics', 'joyful and upbeat', '96 bpm'],
+    lineSec: 4.8,
+    intro: 'A salsa about leaving home to chase a bigger life. Listen for “beyond”, the false friend “eventually” and “looking forward to + -ing”.',
+    parts: [
+      { part: 'Verse 1', lines: [
+        'The river meets the ocean where the evening lights glow,',
+        'I’m looking forward to the night and everywhere we’ll go.',
+        'They told me, “Stay where you belong, the world is far too wide,”',
+        'But there’s a rhythm in my feet I just can’t keep inside.'
+      ] },
+      { part: 'Chorus', lines: [
+        'Beyond the river, beyond the sea,',
+        'There’s a bigger world that’s calling out to me.',
+        'So I’m taking a chance and I’m dancing on,',
+        'Eventually, my love, I’ll find where I belong.'
+      ] },
+      { part: 'Verse 2', lines: [
+        'I used to think a dream like mine was more than I could afford,',
+        'So I saved up every peso and I practised every chord.',
+        'It’s hard to cope with missing home, my mother and my street,',
+        'But every single step is worth it, every single beat.'
+      ] },
+      { part: 'Bridge', lines: [
+        'What I want to achieve is beyond what they can see,',
+        'So turn the music up and come and dance with me.'
+      ] },
+      { part: 'Chorus', lines: [
+        'Beyond the river, beyond the sea,',
+        'There’s a bigger world that’s calling out to me.',
+        'So I’m taking a chance and I’m dancing on,',
+        'Eventually, my love, I’ll find where I belong.'
+      ] }
+    ],
+    words: [
+      { w: 'beyond', in: 'Beyond the river', def: 'on the other side of; further than', es: 'más allá de' },
+      { w: 'look forward to', in: 'looking forward to', def: 'feel happy and excited about something that is going to happen', es: 'tener ganas de / esperar con ilusión' },
+      { w: 'take a chance', in: 'taking a chance', def: 'do something risky because it might go well', es: 'arriesgarse' },
+      { w: 'eventually', in: 'Eventually', def: 'in the end, after a long time (NOT “eventualmente”)', es: 'al final / finalmente' },
+      { w: 'afford', in: 'afford', def: 'have enough money (or time) for something', es: 'permitirse / tener para pagar' },
+      { w: 'cope with', in: 'cope with', def: 'deal successfully with something difficult', es: 'sobrellevar / lidiar con' },
+      { w: 'worth it', in: 'worth it', def: 'good or useful enough to justify the effort or cost', es: 'valer la pena' },
+      { w: 'achieve', in: 'achieve', def: 'succeed in doing something, usually after a lot of effort', es: 'lograr / conseguir' }
+    ],
+    notes: [
+      { h: '“Eventually” is a false friend', t: '“Eventually, my love, I’ll find where I belong” means in the end, after a long time. Spanish “eventualmente” (possibly, now and then) is “possibly” or “occasionally” in English.' },
+      { h: 'Look forward to + -ing', t: '“I’m looking forward to the night.” Here “to” is a preposition, so a verb after it takes -ing: “I’m looking forward to seeing you”, never “to see you”.' },
+      { h: 'Beyond', t: '“Beyond the river” is a place: on the other side of it. “Beyond what they can see” is an idea: more than they can imagine. You’ll also hear “beyond me” (impossible for me to understand) and “beyond repair”.' }
+    ]
+  },
+
+  {
+    id: 'make-a-move', style: 'salsa', emoji: '🎺', title: 'Make a Move', by: 'Sabor de Barrio',
+    level: 'B2', audio: 'audio/songs/make-a-move.mp3',
+    sound: ['salsa dura', 'big band salsa with punchy trumpets and trombones', 'piano montuno', 'congas, bongos and timbales', 'clave rhythm', 'playful and flirty', 'confident female lead vocal singing in English', 'clearly enunciated lyrics', 'call-and-response backing vocals in the chorus', '100 bpm'],
+    lineSec: 4.6,
+    intro: 'A cheeky salsa for the person who never asks you to dance. Listen for “be about to”, “show up” and “keep someone waiting”.',
+    parts: [
+      { part: 'Verse 1', lines: [
+        'You show up at the party every Friday, half past nine,',
+        'You look across the dance floor and you always catch my eye.',
+        'You walk in my direction, then you hesitate again,',
+        'You’re just about to ask me, then you’re chatting with your friends.'
+      ] },
+      { part: 'Chorus', lines: [
+        'Make a move, make a move,',
+        'Don’t keep me waiting, you’ve got nothing to lose.',
+        'The trumpets are on fire and the drums are calling you,',
+        'So make a move before the band has played its final tune.'
+      ] },
+      { part: 'Verse 2', lines: [
+        'My friends all say that you and I would definitely get along,',
+        'We love the same old records and we know the words to every song.',
+        'So stop pretending you’re too shy, I know you’ve noticed me,',
+        'The night is young, the floor is wide, and you’re the one I see.'
+      ] },
+      { part: 'Bridge', lines: [
+        'If you don’t ask me soon, I’m going to ask you first,',
+        'Because the dance you never dance is the one that hurts the worst.'
+      ] },
+      { part: 'Chorus', lines: [
+        'Make a move, make a move,',
+        'Don’t keep me waiting, you’ve got nothing to lose.',
+        'The trumpets are on fire and the drums are calling you,',
+        'So make a move before the band has played its final tune.'
+      ] }
+    ],
+    words: [
+      { w: 'show up', in: 'show up', def: 'arrive somewhere, often when people don’t expect it', es: 'aparecer / llegar' },
+      { w: 'catch someone’s eye', in: 'catch my eye', def: 'get someone’s attention, especially by looking at them', es: 'llamar la atención de alguien' },
+      { w: 'hesitate', in: 'hesitate', def: 'pause before doing something because you are nervous or unsure', es: 'dudar / vacilar' },
+      { w: 'be about to', in: 'about to ask', def: 'be going to do something very soon', es: 'estar a punto de' },
+      { w: 'make a move', in: 'Make a move', def: 'take action, especially to start something romantic', es: 'dar el primer paso' },
+      { w: 'keep someone waiting', in: 'keep me waiting', def: 'make someone wait for you', es: 'hacer esperar a alguien' },
+      { w: 'get along', in: 'get along', def: 'have a friendly relationship', es: 'llevarse bien' },
+      { w: 'definitely', in: 'definitely', def: 'certainly, without any doubt', es: 'sin duda / definitivamente' }
+    ],
+    notes: [
+      { h: 'Be about to + verb', t: '“You’re just about to ask me” means you are going to ask in the next second. “Just” makes it even closer. In the past: “I was about to leave when she called.”' },
+      { h: 'Going to for a decision', t: '“I’m going to ask you first” is a plan or intention. Use “will” for a decision you make right now: “OK, I’ll ask her.”' },
+      { h: 'Would for an imagined situation', t: '“You and I would definitely get along” imagines something that hasn’t happened yet. Note the word order: “would definitely”, not “definitely would” in normal speech.' }
+    ]
+  },
+
+  {
+    id: 'sunday-rain', style: 'bossa', emoji: '🌧️', title: 'Sunday Rain', by: 'Café Lua',
+    level: 'B2', audio: 'audio/songs/sunday-rain.mp3',
+    sound: ['bossa nova', 'soft nylon-string guitar', 'gentle brushed drums', 'warm upright bass', 'light flute', 'intimate, soft female vocal singing in English', 'clearly enunciated lyrics', 'relaxed and cosy', 'rainy Sunday morning mood', '118 bpm'],
+    lineSec: 5.4,
+    intro: 'A lazy bossa nova for a rainy Sunday at home. Listen for “barely”, “meanwhile” and “let something + verb” (no “to”!).',
+    parts: [
+      { part: 'Verse 1', lines: [
+        'A gentle drizzle on the window, and the city’s barely awake,',
+        'The coffee’s warm, the flat is cosy, there’s no decision I must make.',
+        'Meanwhile down below, the market stalls are opening one by one,',
+        'And I just lie here listening, in no hurry for the sun.'
+      ] },
+      { part: 'Chorus', lines: [
+        'Take your time, take your time,',
+        'Let the morning linger like a slow and gentle rhyme.',
+        'Nothing’s urgent, nothing’s wrong,',
+        'Sunday rain is just a song.'
+      ] },
+      { part: 'Verse 2', lines: [
+        'Later we could wander through the park when it is dry,',
+        'Or stay inside and read a book and watch the clouds go by.',
+        'Gradually the grey turns gold, the puddles start to shine,',
+        'And Monday feels a world away, and everything is fine.'
+      ] },
+      { part: 'Bridge', lines: [
+        'I hardly noticed how the hours slipped away,',
+        'Maybe that’s the secret of a perfect rainy day.'
+      ] },
+      { part: 'Chorus', lines: [
+        'Take your time, take your time,',
+        'Let the morning linger like a slow and gentle rhyme.',
+        'Nothing’s urgent, nothing’s wrong,',
+        'Sunday rain is just a song.'
+      ] }
+    ],
+    words: [
+      { w: 'drizzle', in: 'drizzle', def: 'light rain in very small drops', es: 'llovizna' },
+      { w: 'barely', in: 'barely awake', def: 'only just; almost not', es: 'apenas' },
+      { w: 'cosy', in: 'cosy', def: 'warm, comfortable and relaxing (US: cozy)', es: 'acogedor' },
+      { w: 'meanwhile', in: 'Meanwhile', def: 'at the same time, while something else is happening', es: 'mientras tanto' },
+      { w: 'in no hurry', in: 'in no hurry', def: 'not needing or wanting to do something quickly', es: 'sin prisa' },
+      { w: 'linger', in: 'linger', def: 'stay somewhere longer, slowly, because you don’t want to leave', es: 'quedarse / demorarse' },
+      { w: 'wander', in: 'wander', def: 'walk slowly with no special place to go', es: 'pasear / deambular' },
+      { w: 'gradually', in: 'Gradually', def: 'slowly, little by little', es: 'poco a poco / gradualmente' }
+    ],
+    notes: [
+      { h: 'Let + object + verb (no “to”)', t: '“Let the morning linger.” After “let” and “make”, the next verb has no “to”: “Let me go”, “She made me laugh”. Never “let me to go”.' },
+      { h: 'Barely and hardly are already negative', t: '“The city’s barely awake”, “I hardly noticed.” They mean almost not, so don’t add another negative: “I hardly noticed”, not “I didn’t hardly notice”.' },
+      { h: 'Could for suggestions', t: '“Later we could wander through the park” is a soft suggestion, like “podríamos”. It’s gentler than “Let’s…” or “We should…”.' }
+    ]
+  },
+
+  {
+    id: 'postcard', style: 'bossa', emoji: '💌', title: 'Postcard from the Sea', by: 'Tarde Azul',
+    level: 'B2', audio: 'audio/songs/postcard.mp3',
+    sound: ['bossa nova', 'nylon-string guitar with jazzy chords', 'soft brushed snare and rim clicks', 'upright bass', 'warm Rhodes piano', 'tender, slightly wistful female vocal singing in English', 'clearly enunciated lyrics', 'nostalgic and sweet', '122 bpm'],
+    lineSec: 5.4,
+    intro: 'A bossa nova postcard from someone living far from home. Listen for “get used to + -ing”, “even though” and “miss”.',
+    parts: [
+      { part: 'Verse 1', lines: [
+        'I’m writing you a postcard from a city by the sea,',
+        'I’m slowly settling in, but it still feels strange to me.',
+        'The people here are friendly and the buses run on time,',
+        'I’m getting used to waking up to grey and rainy skies.'
+      ] },
+      { part: 'Chorus', lines: [
+        'Even though I’m far away, you’re never far from me,',
+        'Let’s keep in touch, and tell me all the things you see.',
+        'I get a little homesick when the evening comes around,',
+        'But I hear you in the guitar and the gentle bossa sound.'
+      ] },
+      { part: 'Verse 2', lines: [
+        'I miss the mango trees, I miss the music in the street,',
+        'I miss the way you laughed at me when I danced in the heat.',
+        'But I promised I would make the most of every single day,',
+        'So I’m learning and I’m growing in my own slow way.'
+      ] },
+      { part: 'Bridge', lines: [
+        'One day I’ll come back home with stories I can tell,',
+        'Until then, here’s a postcard: I’m happy and I’m well.'
+      ] },
+      { part: 'Chorus', lines: [
+        'Even though I’m far away, you’re never far from me,',
+        'Let’s keep in touch, and tell me all the things you see.',
+        'I get a little homesick when the evening comes around,',
+        'But I hear you in the guitar and the gentle bossa sound.'
+      ] }
+    ],
+    words: [
+      { w: 'settle in', in: 'settling in', def: 'start to feel comfortable in a new home, job or place', es: 'adaptarse / instalarse' },
+      { w: 'get used to', in: 'getting used to', def: 'slowly become familiar with something, so it feels normal', es: 'acostumbrarse a' },
+      { w: 'even though', in: 'Even though', def: 'although; despite the fact that', es: 'aunque / a pesar de que' },
+      { w: 'keep in touch', in: 'keep in touch', def: 'continue to talk or write to someone who is far away', es: 'mantenerse en contacto' },
+      { w: 'homesick', in: 'homesick', def: 'sad because you are away from home and miss it', es: 'nostálgico / con morriña' },
+      { w: 'miss', in: 'I miss the mango', def: 'feel sad because someone or something isn’t with you', es: 'extrañar / echar de menos' },
+      { w: 'make the most of', in: 'make the most of', def: 'enjoy or use something as much as possible', es: 'aprovechar al máximo' }
+    ],
+    notes: [
+      { h: 'Get used to + -ing', t: '“I’m getting used to waking up to grey skies.” Like “look forward to”, the “to” here is a preposition, so the verb takes -ing. Compare “used to + verb” for past habits: “I used to wake up in the sun.”' },
+      { h: 'Even though vs even if', t: '“Even though I’m far away” is a fact: I am far away. “Even if” is imagined: “Even if I move to the moon, I’ll call you.”' },
+      { h: 'Miss, not lose', t: '“I miss the mango trees” = los extraño. “Lose” is for things you can’t find or games you don’t win. “I miss you” is never “I lose you”.' }
+    ]
   }
 ];

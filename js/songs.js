@@ -6,19 +6,36 @@
   var APP = window.APP, el = APP.el, btn = APP.btn, S = APP.state;
   var SONGS = APP.songs = window.SONGS || [];
   var STYLE = {
-    calm: { icon: '🌙', name: 'Calm', blurb: 'Slow and dreamy. Easy to follow, perfect for the evening.' },
+    salsa: { icon: '💃', name: 'Salsa', blurb: 'Clave, congas, piano and trumpets. Dance while you learn.' },
+    bossa: { icon: '🎸', name: 'Bossa nova', blurb: 'Nylon guitar, soft drums and a gentle voice. Slow enough to catch every word.' },
     samba: { icon: '🥁', name: 'Samba', blurb: 'Drums, shakers and Carnaval energy.' },
-    salsa: { icon: '💃', name: 'Salsa', blurb: 'Clave, congas and piano. Dance while you learn.' }
+    calm: { icon: '🌙', name: 'Calm', blurb: 'Slow and dreamy. Easy to follow, perfect for the evening.' }
   };
   var INTRO = 2, PER_LINE = 2, OUTRO = 2; // in bars
+  var SUNG_INTRO = 8; // seconds before the singing starts in a sung song (tools/songs.mjs)
 
-  // every line in order, with the part it belongs to and the bar it starts on
+  // every line in order, with the part it belongs to and where it starts and ends: in bars
+  // for the synthesised songs, in seconds for the sung ones (timed by tools/songs.mjs, or
+  // estimated from the section lengths the song was made with until it has been timed)
   function timeline(song) {
+    if (song.audio) return sungTimeline(song);
     var out = [], bar = INTRO;
     song.parts.forEach(function (p) {
       p.lines.forEach(function (t, i) { out.push({ text: t, part: p.part, first: i === 0, bar: bar }); bar += PER_LINE; });
     });
+    out.forEach(function (l) { l.end = l.bar + PER_LINE; });
     return { lines: out, bars: bar + OUTRO };
+  }
+  function sungTimeline(song) {
+    var T = (window.SONG_TIMES || {})[song.id], out = [], at = SUNG_INTRO, i = 0;
+    song.parts.forEach(function (p) {
+      p.lines.forEach(function (t, j) {
+        var tm = T && T.lines[i];
+        out.push({ text: t, part: p.part, first: j === 0, bar: tm ? tm[0] : at, end: tm ? tm[1] : at + song.lineSec * 0.9 });
+        at += song.lineSec; i++;
+      });
+    });
+    return { lines: out, bars: T ? T.dur : at + SUNG_INTRO };
   }
   APP.songLines = function (song) { return timeline(song).lines; };
 
@@ -32,7 +49,7 @@
     APP.backBar(main, '#/', '');
     var head = el('section', 'page-head');
     head.appendChild(el('h1', '', 'Songs'));
-    head.appendChild(el('p', 'muted', 'Original songs packed with C1 idioms and grammar. Listen, sing along, tap a word to see what it means, then take the quiz.'));
+    head.appendChild(el('p', 'muted', 'Original songs for learning new words. The 🎤 ones are really sung; the others are played by the app, with C1 lyrics. Listen, sing along, tap a word to see what it means, then take the quiz.'));
     main.appendChild(head);
     Object.keys(STYLE).forEach(function (k) {
       var list = SONGS.filter(function (s) { return s.style === k; });
@@ -47,7 +64,7 @@
         a.appendChild(el('span', 'song-card-i', s.emoji));
         var t = el('span', 'song-card-t');
         t.appendChild(el('span', 'song-card-n', s.title));
-        t.appendChild(el('span', 'song-card-by', s.by + ' · ' + s.words.length + ' expressions'));
+        t.appendChild(el('span', 'song-card-by', (s.audio ? '🎤 Sung · ' + (s.level || 'B2') + ' · ' : s.by + ' · ') + s.words.length + ' words to learn'));
         a.appendChild(t);
         var n = heard()[s.id];
         a.appendChild(el('span', 'song-card-go', n ? '✓' : '▶'));
@@ -63,13 +80,13 @@
     if (!song) { APP.go('#/songs'); return; }
     var tl = timeline(song), lines = tl.lines;
     var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var voiceOn = APP.canSpeak && S.songVoice !== false, slow = false;
+    var voiceOn = APP.canSpeak && S.songVoice !== false && !song.audio, slow = false;
     var events = [], cur = -2, raf = 0, alive = true;
 
     APP.backBar(main, '#/songs', STYLE[song.style].icon + ' ' + STYLE[song.style].name);
     var head = el('section', 'page-head song-head');
     head.appendChild(el('h1', '', song.emoji + ' ' + song.title));
-    head.appendChild(el('p', 'muted song-by', 'by ' + song.by + ' · C1'));
+    head.appendChild(el('p', 'muted song-by', 'by ' + song.by + ' · ' + (song.level || 'C1') + (song.audio ? ' · 🎤 sung' : '')));
     head.appendChild(el('p', 'step-lead', song.intro));
     main.appendChild(head);
 
@@ -99,10 +116,10 @@
     });
     voiceB.classList.toggle('on', voiceOn); voiceB.setAttribute('aria-pressed', voiceOn);
     voiceB.title = 'A voice reads each line as it comes';
-    if (!APP.canSpeak) voiceB.hidden = true;
+    if (!APP.canSpeak || song.audio) voiceB.hidden = true; // a sung song has its own singer
     var slowB = btn('song-btn song-tog', '🐢 Slower', function () {
       slow = !slow; slowB.classList.toggle('on', slow); slowB.setAttribute('aria-pressed', slow);
-      p.setTempo(song.bpm * (slow ? 0.82 : 1));
+      p.setTempo(song.audio ? (slow ? 0.85 : 1) : song.bpm * (slow ? 0.82 : 1));
     });
     slowB.setAttribute('aria-pressed', 'false');
     ctl.appendChild(restart); ctl.appendChild(playB); ctl.appendChild(voiceB); ctl.appendChild(slowB);
@@ -156,9 +173,11 @@
 
     /* ----- playing ----- */
 
-    var p = APP.music.player({
-      style: song.style, bpm: song.bpm, key: song.key, chords: song.chords, bars: tl.bars,
+    var p = (song.audio ? sungPlayer : APP.music.player)({
+      style: song.style, bpm: song.bpm, key: song.key, chords: song.chords, bars: tl.bars, src: song.audio,
       onBeat: function (kind, t, n) { if (events.length < 200) events.push({ kind: kind, t: t, n: n }); },
+      onDuration: function (d) { seekBar.max = d; },
+      onBlocked: function () { setPlaying(false); },
       onEnd: function () {
         if (!alive) return;
         setPlaying(false); p.stop(); cur = -2;
@@ -190,7 +209,12 @@
       if (dragging) seekBar.value = bar;
     }
     function lineAt(pos) {
-      for (var i = lines.length - 1; i >= 0; i--) if (pos >= lines[i].bar) return pos < lines[i].bar + PER_LINE ? i : -1;
+      for (var i = lines.length - 1; i >= 0; i--) {
+        if (pos < lines[i].bar) continue;
+        // a sung line stays lit until the next one starts, unless there's a long gap (an instrumental)
+        var until = song.audio ? Math.min(lines[i + 1] ? lines[i + 1].bar : Infinity, lines[i].end + 2.5) : lines[i].end;
+        return pos < until ? i : -1;
+      }
       return -1;
     }
     function follow(pos) {
@@ -208,11 +232,12 @@
           glossLine(lines[i].text, song.words, nowLine);
           if (voiceOn && p.isPlaying()) APP.speak(lines[i].text);
         } else {
-          nowPart.textContent = pos < INTRO ? 'Intro' : 'Outro';
-          nowLine.textContent = pos < INTRO ? (p.isPlaying() ? '♪ ♪ ♪' : 'Press play ▶') : '♪ ♪ ♪';
+          var before = pos < lines[0].bar, after = pos > lines[lines.length - 1].bar;
+          nowPart.textContent = before ? 'Intro' : after ? 'Outro' : '♪';
+          nowLine.textContent = before && !p.isPlaying() ? 'Press play ▶' : '♪ ♪ ♪';
         }
       }
-      if (rows[i]) rows[i].style.setProperty('--p', Math.min(100, ((pos - lines[i].bar) / PER_LINE) * 115) + '%');
+      if (rows[i]) rows[i].style.setProperty('--p', Math.min(100, ((pos - lines[i].bar) / Math.max(0.5, lines[i].end - lines[i].bar)) * 105) + '%');
     }
     // don't yank the page back while she is scrolling the lyrics herself
     var lastScroll = 0;
@@ -242,6 +267,7 @@
       p.analyser.getByteFrequencyData(freq);
       var t = p.ctx.currentTime;
       while (events.length && events[0].t <= t) beat(events.shift());
+      if (song.audio && p.isPlaying()) onsets(t);
       pulse *= Math.pow(0.02, dt); flash *= Math.pow(0.01, dt);
       spin += dt * (p.isPlaying() ? 0.6 : 0.08);
       DRAW[song.style](dt, ts / 1000);
@@ -251,12 +277,23 @@
       if (document.activeElement !== seekBar) seekBar.value = pos;
       raf = requestAnimationFrame(frame);
     }
+    // a sung song has no score to follow, so find the beat in the sound itself
+    var lowAvg = 0, lastHit = 0, hits = 0;
+    function onsets(t) {
+      var lo = energy(1, 6), mid = energy(20, 60);
+      if (lo > lowAvg * 1.25 && lo > 0.3 && t - lastHit > 0.22) {
+        lastHit = t; hits++;
+        beat({ kind: 'kick', t: t, n: hits });
+        beat({ kind: song.style === 'salsa' ? (hits % 2 ? 'clave' : 'soft') : 'note', t: t, n: hits * 7 });
+      } else if (mid > 0.45 && Math.random() < 0.04) beat({ kind: 'note', t: t, n: Math.floor(Math.random() * 24) });
+      lowAvg = lowAvg * 0.92 + lo * 0.08;
+    }
     function beat(e) {
       if (e.kind === 'kick') pulse = 1;
       if (e.kind === 'soft') pulse = Math.max(pulse, 0.5);
       if (e.kind === 'clave') flash = 1;
       if (reduced) return;
-      if (song.style === 'calm' && e.kind === 'note' && Math.random() < 0.5)
+      if ((song.style === 'calm' || song.style === 'bossa') && e.kind === 'note' && Math.random() < 0.5)
         parts.push({ x: W * (0.1 + ((e.n % 24) / 24) * 0.8), y: H * (0.35 + Math.random() * 0.4), r: 4, life: 1, kind: 'ripple' });
       if (song.style === 'samba' && e.kind === 'hit')
         for (var i = 0; i < 3; i++) parts.push({ x: Math.random() * W, y: -10, vx: (Math.random() - 0.5) * 40, vy: 60 + Math.random() * 90, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 8, c: SAMBA_C[Math.floor(Math.random() * SAMBA_C.length)], life: 1, kind: 'confetti' });
@@ -349,6 +386,35 @@
         });
       }
     };
+    // bossa nova: a sunset over the sea, six guitar strings in the sky, ripples on the notes
+    DRAW.bossa = function (dt, time) {
+      bg('#f7a35c', '#3b2a5a');
+      var low = energy(1, 8), mid = energy(8, 40), hi = energy(40, 90);
+      var cx = W * 0.5, sy = H * 0.5, R = Math.min(W, H) * (0.17 + pulse * 0.02 + low * 0.03);
+      var sg = g.createRadialGradient(cx, sy, R * 0.2, cx, sy, R * 2.2);
+      sg.addColorStop(0, 'rgba(255,240,190,1)'); sg.addColorStop(0.45, 'rgba(255,190,110,0.85)'); sg.addColorStop(1, 'rgba(255,150,90,0)');
+      g.fillStyle = sg; g.beginPath(); g.arc(cx, sy, R * 2.2, 0, 7); g.fill();
+      var sea = g.createLinearGradient(0, H * 0.58, 0, H);
+      sea.addColorStop(0, '#2a6f8f'); sea.addColorStop(1, '#16304d');
+      g.fillStyle = sea; g.fillRect(0, H * 0.58, W, H * 0.42);
+      for (var k = 0; k < 7; k++) { // sunlight on the water
+        var y = H * (0.61 + k * 0.055), w = R * (1.6 - k * 0.16) * (0.8 + mid * 0.6);
+        g.fillStyle = 'rgba(255,220,160,' + (0.55 - k * 0.06) + ')';
+        g.fillRect(cx - w / 2 + Math.sin(time * 1.4 + k) * 6, y, w, 3);
+      }
+      for (var s = 0; s < 6; s++) { // strings, shimmering with the high notes
+        var y0 = H * (0.12 + s * 0.045), amp = (1.5 + hi * 14 + pulse * 3) * (1 - s * 0.08);
+        g.strokeStyle = 'rgba(255,248,230,' + (0.25 + hi * 0.5) + ')'; g.lineWidth = 1 + (5 - s) * 0.25;
+        g.beginPath();
+        for (var x = 0; x <= W; x += 8) g.lineTo(x, y0 + Math.sin(x / 40 + time * (6 + s)) * amp * Math.sin(Math.PI * x / W));
+        g.stroke();
+      }
+      parts.forEach(function (q) {
+        q.r += dt * 30; q.life -= dt * 0.5;
+        g.strokeStyle = 'rgba(255,235,200,' + Math.max(0, q.life * 0.7) + ')'; g.lineWidth = 1.5;
+        g.beginPath(); g.ellipse(q.x, H * 0.62 + (q.y % (H * 0.33)), q.r, q.r * 0.3, 0, 0, 7); g.stroke();
+      });
+    };
     raf = requestAnimationFrame(frame);
 
     function hide() { if (document.hidden && p.isPlaying()) toggle(); }
@@ -364,6 +430,32 @@
       window.removeEventListener('touchmove', onScroll);
       document.removeEventListener('visibilitychange', hide);
     });
+  }
+
+  // A sung song: the same controls as APP.music.player, playing the recording through an
+  // analyser so the visualiser still dances. Positions are in seconds, not bars.
+  function sungPlayer(o) {
+    var AC = window.AudioContext || window.webkitAudioContext, ctx = new AC();
+    var a = new Audio(o.src);
+    a.preload = 'auto';
+    a.preservesPitch = a.mozPreservesPitch = a.webkitPreservesPitch = true;
+    var src = ctx.createMediaElementSource(a), an = ctx.createAnalyser();
+    an.fftSize = 512; an.smoothingTimeConstant = 0.6;
+    src.connect(an); an.connect(ctx.destination);
+    a.addEventListener('loadedmetadata', function () { if (o.onDuration && isFinite(a.duration)) o.onDuration(a.duration); });
+    a.addEventListener('ended', function () { if (o.onEnd) o.onEnd(); });
+    a.addEventListener('error', function () { if (a.getAttribute('src')) APP.toast('This song needs the internet the first time you play it.'); });
+    return {
+      ctx: ctx, analyser: an,
+      play: function () { if (ctx.state === 'suspended') ctx.resume(); var pr = a.play(); if (pr && pr.catch) pr.catch(function () { if (o.onBlocked) o.onBlocked(); }); },
+      pause: function () { a.pause(); },
+      stop: function () { a.pause(); a.removeAttribute('src'); a.load(); if (ctx.close) ctx.close().catch(function () {}); },
+      seek: function (sec) { try { a.currentTime = Math.max(0, sec); } catch (e) {} },
+      position: function () { return a.currentTime || 0; },
+      isPlaying: function () { return !a.paused && !a.ended; },
+      setVolume: function () {},
+      setTempo: function (rate) { a.playbackRate = rate; }
+    };
   }
 
   // Underline this song's key expressions in a line so she can tap them.

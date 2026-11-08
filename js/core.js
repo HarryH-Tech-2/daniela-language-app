@@ -201,6 +201,11 @@
   APP.units.forEach(function (u) {
     u.vocab.forEach(function (v) { APP.allWords.push(Object.assign({ unit: u.id }, v)); });
   });
+  // the B2 word list (data/wordlist.js) can go into Review too, under unit "b2"
+  APP.listWords = [];
+  (window.WORDLIST || []).forEach(function (g) {
+    g.items.forEach(function (v) { var w = Object.assign({ unit: 'b2', group: g.id }, v); APP.listWords.push(w); APP.allWords.push(w); });
+  });
   APP.wordKey = function (v) { return v.unit + ':' + v.w; };
 
   // pictures (data/images.js, built by tools/images.py)
@@ -484,7 +489,7 @@
     main.replaceChildren();
     main.className = 'view view-' + parts[0];
     document.querySelectorAll('.nav a').forEach(function (a) {
-      a.classList.toggle('on', a.getAttribute('data-r') === (parts[0] === 'unit' || parts[0] === 'everyday' || parts[0] === 'songs' ? 'home' : parts[0] === 'game' ? 'games' : parts[0]));
+      a.classList.toggle('on', a.getAttribute('data-r') === (parts[0] === 'unit' || parts[0] === 'everyday' || parts[0] === 'songs' || parts[0] === 'words' || parts[0] === 'explain' ? 'home' : parts[0] === 'game' ? 'games' : parts[0]));
     });
     fn(main, parts.slice(1));
     window.scrollTo(0, 0);

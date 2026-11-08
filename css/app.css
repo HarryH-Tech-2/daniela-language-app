@@ -780,3 +780,44 @@ textarea { resize: vertical; line-height: 1.5; font-size: 17px; }
 .song-note { margin-bottom: 10px; }
 .song-quiz { margin: 18px 0 10px; }
 @media (min-width: 640px) { .song-canvas { height: 300px; } .song-now-line { font-size: 24px; } }
+
+/* ---------- bossa nova songs, the B2 word list and explanations ---------- */
+
+.song-card.song-bossa { background: linear-gradient(135deg, #e0763a, #3b2a5a); }
+
+.words-bar { margin: 4px 0 16px; }
+.words-bar .big-btn { flex: 1 1 220px; }
+.words-bar .ghost-btn { flex: 1 1 180px; min-height: 54px; }
+.word-add { margin-top: 10px; }
+.word-add:disabled { opacity: 1; color: var(--sea-d); border-color: var(--right); box-shadow: 0 3px 0 var(--right); }
+@media (prefers-color-scheme: dark) { .word-add:disabled { color: #7ff0d8; } }
+
+.explain-list { display: grid; gap: 10px; }
+.explain-link { margin: 0; }
+.explain-link .qtile-t { font-weight: 700; line-height: 1.35; }
+.explain-q { font-size: 26px; line-height: 1.25; }
+.explain-label { margin: 0 0 4px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--pink); }
+.explain-short { border: 2px solid color-mix(in srgb, var(--pink) 35%, var(--line)); }
+.explain-short p:last-child { margin: 0; font-size: 18px; font-weight: 600; }
+.explain-part h2 { font-size: 19px; margin: 20px 0 4px; }
+.explain-part p { margin: 0; }
+.explain-examples { display: grid; gap: 8px; }
+.explain-ex {
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 16px;
+  border: 2px solid var(--line); background: var(--card);
+}
+.explain-ex.is-ok { border-color: var(--right); background: var(--right-bg); }
+.explain-ex.is-bad { border-color: var(--wrong); background: var(--wrong-bg); }
+.explain-mark { font-size: 20px; font-weight: 900; width: 22px; text-align: center; }
+.is-ok .explain-mark { color: var(--right); }
+.is-bad .explain-mark { color: var(--wrong); }
+.explain-ex-t { flex: 1; min-width: 0; }
+.explain-en { margin: 0; font-weight: 700; }
+.is-bad .explain-en { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: color-mix(in srgb, var(--wrong) 70%, transparent); }
+.explain-note { margin: 2px 0 0; font-size: 14px; color: var(--ink-2); }
+.explain-tip { background: color-mix(in srgb, var(--sun) 18%, var(--card)); }
+.explain-tip p:last-child { margin: 0; }
+.explain-check-q { font-size: 18px; font-weight: 600; margin: 0 0 12px; }
+.explain-gap { display: inline-block; min-width: 64px; padding: 0 6px; border-bottom: 3px solid var(--line); text-align: center; color: var(--ink-2); }
+.explain-gap.filled { color: var(--sea-d); border-color: var(--right); font-weight: 800; }
+@media (prefers-color-scheme: dark) { .explain-gap.filled { color: #7ff0d8; } }

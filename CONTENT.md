@@ -72,8 +72,51 @@ Original lyrics only (never real songs: they're copyrighted). The music is made 
 }
 ```
 
+**Sung songs** (salsa and bossa nova, B2, built around new words) have a real recording instead.
+Leave out `bpm`, `key` and `chords` and add:
+
+```js
+{ id: 'sunday-rain', style: 'bossa',      // salsa | bossa
+  level: 'B2', audio: 'audio/songs/sunday-rain.mp3',     // always audio/songs/<id>.mp3
+  sound: ['bossa nova', 'soft nylon-string guitar', '…'], // 4+ styles for the music model; never name a real artist
+  lineSec: 5.4,                           // seconds per sung line (salsa ~4.6-4.8, bossa ~5.4)
+  /* emoji, title, by, intro, parts, words, notes as above; ≤30 lines and ≤200 characters per part */ }
+```
+
+Then run `node tools/songs.mjs`. It reads `ELEVENLABS_API_KEY` from `.env` (never committed), makes the mp3 with the
+ElevenLabs Music API from `sound` and the lyrics (an 8-second intro, then each part for `lines × lineSec`), and times
+every line with ElevenLabs forced alignment into `data/song-times.js`. Until a song is timed, the player estimates the
+timings from those section lengths. `--force <id>` makes a new take; `--align <id>` only redoes the timings.
+
 Chord types: major, `m`, `7`, `maj7`, `m7`, `6`, `m6`, `9`, `m9`, `add9`, `sus4`, `7sus4`, `m7b5`, `dim`.
 The song quiz (`#/game/songs/<id>`) blanks each word's `in` out of its line, so keep every `in` distinct.
+
+## B2 word list: `data/wordlist.js`
+
+Browsed at `#/words`, quizzed at `#/game/words/<group>`; every word can be added to Review.
+
+```js
+window.WORDLIST = [
+  { id: 'linking', icon: '🔗', title: 'Linking words', short: 'Linking', intro: 'One or two sentences.',
+    items: [                                   // 12+ per group
+      { w: 'beyond', pos: 'preposition', def: '…', ex: 'There’s a little beach just beyond the hotel.',
+        es: 'más allá de', note: 'Optional tip.', near: [] }   // near: as in Everyday English
+    ] }
+];
+```
+
+## Explanations: `data/explain.js`
+
+“Why does English do that?” answers at `#/explain/<id>`.
+
+```js
+{ id: 'to-after-verbs', emoji: '➡️', q: 'The question, as she would ask it',
+  short: 'The answer in one or two sentences.',
+  parts: [{ h: 'Heading', t: 'A short paragraph.' }],
+  examples: [{ en: 'I want to learn salsa.', ok: true, note: 'optional' }, { en: 'I can to swim.', ok: false, note: 'the fix' }],
+  tip: 'The mistake Colombian speakers make, and how to avoid it.',
+  check: [{ q: 'I decided {gap} law.', right: 'to study', wrong: ['study', 'studying'] }] }   // optional quick check
+```
 
 ## Exercise kinds
 

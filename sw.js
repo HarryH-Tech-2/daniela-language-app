@@ -3,7 +3,7 @@
 //
 // When you add a file, add it to FILES and bump VERSION so installed copies pick it up.
 // `node test/files.test.js` checks that every unit in index.html is listed here.
-var VERSION = 'v12';
+var VERSION = 'v13';
 var CACHE = 'dale-' + VERSION;
 var FONT_CACHE = 'dale-fonts';
 var IMG_CACHE = 'dale-img'; // pictures never change name, so they live outside VERSION
@@ -14,8 +14,8 @@ try { importScripts('data/images.js'); } catch (e) { self.IMAGES = { stories: {}
 var FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'icon.svg', 'icon-192.png', 'icon-512.png', 'icon-maskable.png', 'apple-touch-icon.png',
-  'js/version.js', 'js/core.js', 'js/exercise.js', 'js/screens.js', 'js/games.js', 'js/everyday.js', 'js/music.js', 'js/songs.js', 'js/talk.js', 'js/review.js',
-  'data/profile.js', 'data/games.js', 'data/everyday.js', 'data/songs.js', 'data/talks.js', 'data/images.js',
+  'js/version.js', 'js/core.js', 'js/exercise.js', 'js/screens.js', 'js/games.js', 'js/everyday.js', 'js/music.js', 'js/songs.js', 'js/words.js', 'js/explain.js', 'js/talk.js', 'js/review.js',
+  'data/profile.js', 'data/games.js', 'data/everyday.js', 'data/songs.js', 'data/song-times.js', 'data/wordlist.js', 'data/explain.js', 'data/talks.js', 'data/images.js',
   'data/units/home.js', 'data/units/dance.js', 'data/units/kitchen.js', 'data/units/dogs.js',
   'data/units/plans.js', 'data/units/law-basics.js', 'data/units/crime.js', 'data/units/gossip.js',
   'data/units/style.js', 'data/units/wellness.js', 'data/units/love.js', 'data/units/abroad.js',
@@ -72,6 +72,10 @@ self.addEventListener('fetch', function (e) {
     return;
   }
   if (url.origin !== location.origin) return;
+
+  // sung songs (audio/songs/*.mp3): straight from the network, so the browser can ask for
+  // the part it needs (range requests, which iPhone insists on for audio)
+  if (url.pathname.indexOf('/audio/') >= 0) return;
 
   // pictures: cache first, never refreshed
   if (url.pathname.indexOf('/img/') >= 0) {

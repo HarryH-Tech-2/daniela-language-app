@@ -183,6 +183,10 @@ if (fs.existsSync(everyFile)) {
   }
 }
 
+var SONG_TIMES = {};
+if (fs.existsSync(path.join(root, 'data/song-times.js'))) {
+  try { SONG_TIMES = load(path.join(root, 'data/song-times.js')).SONG_TIMES || {}; } catch (e) { err('song-times.js', 'does not run: ' + e.message); }
+}
 var songFile = path.join(root, 'data/songs.js');
 if (fs.existsSync(songFile)) {
   var SG;
@@ -191,18 +195,32 @@ if (fs.existsSync(songFile)) {
     var QUAL = /^[A-G][#b]?(|m|7|maj7|m7|6|m6|9|m9|add9|sus4|7sus4|m7b5|dim)$/, ids = {}, allW = {}, allEs = {};
     SG.forEach(function (s, si) {
       var at = 'songs[' + (s.id || si) + ']';
-      ['id', 'style', 'emoji', 'title', 'by', 'key', 'intro'].forEach(function (f) { if (!str(s[f])) err(at, 'needs ' + f); });
+      ['id', 'style', 'emoji', 'title', 'by', 'intro'].forEach(function (f) { if (!str(s[f])) err(at, 'needs ' + f); });
       if (ids[s.id]) err(at, 'duplicate id'); ids[s.id] = 1;
-      if (['calm', 'samba', 'salsa'].indexOf(s.style) < 0) err(at, 'style must be calm, samba or salsa');
-      if (!(s.bpm >= 50 && s.bpm <= 140)) err(at, 'bpm should be 50-140');
-      if (!Array.isArray(s.chords) || !s.chords.length) err(at, 'needs chords');
-      else s.chords.forEach(function (c) { if (!QUAL.test(c)) err(at, 'unknown chord ' + c); });
+      if (s.audio !== undefined) {
+        // a sung song: a recording made by tools/songs.mjs
+        if (['salsa', 'bossa'].indexOf(s.style) < 0) err(at, 'a sung song’s style must be salsa or bossa');
+        if (s.audio !== 'audio/songs/' + s.id + '.mp3') err(at, 'audio must be audio/songs/' + s.id + '.mp3');
+        else if (!fs.existsSync(path.join(root, s.audio))) err(at, s.audio + ' is missing: run node tools/songs.mjs');
+        if (!Array.isArray(s.sound) || s.sound.length < 4 || !s.sound.every(str)) err(at, 'needs sound: 4+ style strings for the music model');
+        if (!(s.lineSec >= 3 && s.lineSec <= 8)) err(at, 'lineSec should be 3-8 seconds');
+        if (!str(s.level)) err(at, 'needs level');
+      } else {
+        if (!str(s.key)) err(at, 'needs key');
+        if (['calm', 'samba', 'salsa'].indexOf(s.style) < 0) err(at, 'style must be calm, samba or salsa');
+        if (!(s.bpm >= 50 && s.bpm <= 140)) err(at, 'bpm should be 50-140');
+        if (!Array.isArray(s.chords) || !s.chords.length) err(at, 'needs chords');
+        else s.chords.forEach(function (c) { if (!QUAL.test(c)) err(at, 'unknown chord ' + c); });
+      }
       var lines = [];
       (s.parts || []).forEach(function (p, pi) {
         if (!str(p.part) || !Array.isArray(p.lines) || !p.lines.length || !p.lines.every(str)) err(at + '.parts[' + pi + ']', 'needs part and lines');
         else lines = lines.concat(p.lines);
       });
       if (lines.length < 12) err(at, 'needs 12+ lines');
+      (s.audio ? s.parts : []).forEach(function (p) { if (p.lines.length > 30 || p.lines.some(function (l) { return l.length > 200; })) err(at, p.part + ': the music model takes at most 30 lines of 200 characters per part'); });
+      var T = SONG_TIMES[s.id];
+      if (T && (!Array.isArray(T.lines) || T.lines.length !== lines.length)) err(at, 'data/song-times.js has ' + (T.lines || []).length + ' lines but the song has ' + lines.length + ': run node tools/songs.mjs --align ' + s.id);
       lines.forEach(function (l) { if (words(l) > 16) warn(at, 'long line (hard to sing or read in time): ' + l); });
       var text = lines.join('\n').toLowerCase();
       if (!Array.isArray(s.words) || s.words.length < 5) err(at, 'needs 5+ words (the quiz uses them)');
@@ -216,6 +234,54 @@ if (fs.existsSync(songFile)) {
         if (allEs[es1]) err(wat, 'same Spanish as another word: ' + es1); allEs[es1] = 1;
       });
       if (!Array.isArray(s.notes) || s.notes.length < 2 || !s.notes.every(function (n) { return str(n.h) && str(n.t); })) err(at, 'needs 2+ notes with h and t');
+    });
+  }
+}
+
+var wlFile = path.join(root, 'data/wordlist.js');
+if (fs.existsSync(wlFile)) {
+  var WL;
+  try { WL = load(wlFile).WORDLIST; } catch (e) { err('wordlist.js', 'does not run: ' + e.message); }
+  if (WL) {
+    var allL = {}, POS = ['noun', 'verb', 'adjective', 'adverb', 'phrase', 'phrasal verb', 'idiom', 'preposition', 'conjunction'];
+    WL.forEach(function (g, gi) {
+      var gat = 'wordlist[' + (g.id || gi) + ']';
+      ['id', 'icon', 'title', 'short', 'intro'].forEach(function (f) { if (!str(g[f])) err(gat, 'needs ' + f); });
+      if (!Array.isArray(g.items) || g.items.length < 12) { err(gat, 'needs 12+ items (the quiz uses 12)'); return; }
+      var ws = g.items.map(function (v) { return v.w; }), firstEs = {};
+      g.items.forEach(function (v, i) {
+        var at = gat + '.items[' + (v.w || i) + ']';
+        ['w', 'pos', 'def', 'es', 'ex'].forEach(function (f) { if (!str(v[f])) err(at, 'needs ' + f); });
+        if (POS.indexOf(v.pos) < 0) err(at, 'unknown pos ' + v.pos);
+        if (v.note !== undefined && !str(v.note)) err(at, 'note must be a string');
+        var key = String(v.w).toLowerCase();
+        if (allL[key]) err(at, 'duplicate ' + v.w); allL[key] = 1;
+        var es1 = String(v.es).split(' / ')[0];
+        if (firstEs[es1]) err(at, 'same Spanish as another item: ' + es1); firstEs[es1] = 1;
+        (v.near || []).forEach(function (n) { if (ws.indexOf(n) < 0) err(at, 'near lists ' + n + ', which is not in this group'); });
+      });
+    });
+    if (!allL.beyond) err('wordlist', 'should include “beyond”');
+  }
+}
+
+var exFile = path.join(root, 'data/explain.js');
+if (fs.existsSync(exFile)) {
+  var EX;
+  try { EX = load(exFile).EXPLAIN; } catch (e) { err('explain.js', 'does not run: ' + e.message); }
+  if (EX) {
+    var exIds = {};
+    EX.forEach(function (x, xi) {
+      var at = 'explain[' + (x.id || xi) + ']';
+      ['id', 'emoji', 'q', 'short', 'tip'].forEach(function (f) { if (!str(x[f])) err(at, 'needs ' + f); });
+      if (exIds[x.id]) err(at, 'duplicate id'); exIds[x.id] = 1;
+      if (!Array.isArray(x.parts) || !x.parts.length || !x.parts.every(function (p) { return str(p.h) && str(p.t); })) err(at, 'needs parts with h and t');
+      if (!Array.isArray(x.examples) || x.examples.length < 2 || !x.examples.every(function (e) { return str(e.en) && typeof e.ok === 'boolean'; })) err(at, 'needs 2+ examples with en and ok');
+      (x.check || []).forEach(function (c, ci) {
+        var cat = at + '.check[' + ci + ']';
+        if (!str(c.q) || c.q.split('{gap}').length !== 2) err(cat, 'q needs {gap} exactly once');
+        if (!str(c.right) || !Array.isArray(c.wrong) || c.wrong.length < 1 || c.wrong.indexOf(c.right) >= 0) err(cat, 'needs right and 1-3 different wrong');
+      });
     });
   }
 }

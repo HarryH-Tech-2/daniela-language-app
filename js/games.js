@@ -13,6 +13,7 @@
     { id: 'idioms', icon: '🌶️', name: 'Idioms', desc: 'Raining cats and dogs? Learn what it means.', need: 'idioms' },
     { id: 'phrasal', icon: '🧲', name: 'Phrasal match', desc: 'Match phrasal verbs to their meaning.', need: 'phrasal' },
     { id: 'everyday', icon: '💬', name: 'Everyday English', desc: 'Phrasal verbs, reactions and idioms natives use all the time.', need: 'everyday' },
+    { id: 'words', icon: '📗', name: 'B2 words', desc: 'Beyond, despite, whereas… the words that make you sound B2.', need: 'words' },
     { id: 'songs', icon: '🎵', name: 'Song quiz', desc: 'Fill the missing words in the songs.', need: 'songs' },
     { id: 'memory', icon: '🃏', name: 'Memory', desc: 'Find the English and Spanish pairs.' },
     { id: 'dictation', icon: '🎧', name: 'Dictation', desc: 'Listen and write the sentence.' }
@@ -27,6 +28,7 @@
     LIST.forEach(function (g) {
       if (g.need === 'pics') { if (picWords().length < 8) return; }
       else if (g.need === 'everyday') { if (!EVERY.length) return; }
+      else if (g.need === 'words') { if (!WORDS.length) return; }
       else if (g.need === 'songs') { if (!(window.SONGS || []).length) return; }
       else if (g.need && !(G[g.need] || []).length) return;
       var a = el('a', 'game-card');
@@ -46,7 +48,7 @@
     if (!g) { APP.go('#/games'); return; }
     APP.backBar(main, '#/games', g.icon + ' ' + g.name);
     ({ pictures: pictures, friends: friends, fixit: fixit, speed: speed, rescue: rescue, sounds: sounds, idioms: idioms,
-      phrasal: phrasal, everyday: everyday, songs: songs, memory: memory, dictation: dictation })[g.id](main, g, args.slice(1));
+      phrasal: phrasal, everyday: everyday, words: words, songs: songs, memory: memory, dictation: dictation })[g.id](main, g, args.slice(1));
   });
 
   function record(id, score) {
@@ -153,9 +155,15 @@
   /* ---------- Everyday English: one group from data/everyday.js, or all of them ---------- */
 
   var EVERY = window.EVERYDAY || [];
-  function everyday(main, g, args) {
-    var grp = EVERY.filter(function (x) { return x.id === args[0]; })[0];
-    var groups = grp ? [grp] : EVERY;
+  // the B2 word list in the same shape, so it can use the same quiz
+  var WORDS = (window.WORDLIST || []).map(function (x) {
+    return Object.assign({}, x, { items: x.items.map(function (v) { return Object.assign({}, v, { p: v.w, near: v.near }); }) });
+  });
+  function everyday(main, g, args) { groupQuiz(main, g, args, EVERY, '#/game/everyday'); }
+  function words(main, g, args) { groupQuiz(main, g, args, WORDS, '#/game/words'); }
+  function groupQuiz(main, g, args, ALL, base) {
+    var grp = ALL.filter(function (x) { return x.id === args[0]; })[0];
+    var groups = grp ? [grp] : ALL;
     if (grp) main.appendChild(el('p', 'muted', grp.icon + ' ' + grp.title));
     var all = [];
     groups.forEach(function (x) { x.items.forEach(function (v) { all.push({ v: v, grp: x }); }); });
@@ -168,7 +176,7 @@
     });
     // a board matching four more to their Spanish
     qs.push({ kind: 'match', label: 'Match each one to its Spanish', pairs: picked.slice(8, 12).map(function (it) { return [it.v.p, it.v.es.split(' / ')[0]]; }) });
-    rounds(main, g, qs, 8, '#/game/everyday' + (grp ? '/' + grp.id : ''));
+    rounds(main, g, qs, 8, base + (grp ? '/' + grp.id : ''));
   }
   // wrong options: others from the same group, never one that means nearly the same
   function others(it) {
