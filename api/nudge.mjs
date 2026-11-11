@@ -24,7 +24,6 @@
 //   VAPID_SUBJECT   optional contact for the push services (mailto:… or https://…);
 //                   the site's own address is used if it's missing
 import fs from 'node:fs';
-import path from 'node:path';
 import vm from 'node:vm';
 import crypto from 'node:crypto';
 import webpush from 'web-push';
@@ -63,14 +62,14 @@ const hset = (env, hash, key, value) => redis(env, ['HSET', hash, key, JSON.stri
 let content = null;
 function loadContent() {
   if (content) return content;
-  const root = process.cwd();
   const ctx = { window: {} };
   vm.createContext(ctx);
-  const run = (p) => vm.runInContext(fs.readFileSync(path.join(root, p), 'utf8'), ctx, { filename: p });
-  const unitDir = path.join(root, 'data/units');
-  fs.readdirSync(unitDir).filter((f) => f.endsWith('.js')).forEach((f) => run('data/units/' + f));
-  run('data/wordlist.js');
-  run('data/nudges.js');
+  const run = (url) => vm.runInContext(fs.readFileSync(url, 'utf8'), ctx, { filename: url.pathname });
+  // written as new URL('../data/…', import.meta.url) so Vercel bundles these files with the function
+  const unitDir = new URL('../data/units/', import.meta.url);
+  fs.readdirSync(unitDir).filter((f) => f.endsWith('.js')).forEach((f) => run(new URL(f, unitDir)));
+  run(new URL('../data/wordlist.js', import.meta.url));
+  run(new URL('../data/nudges.js', import.meta.url));
   // the same keys as APP.wordKey in js/core.js, so the page can find the word again
   const words = [];
   (ctx.window.UNITS || []).forEach((u) => u.vocab.forEach((v) => words.push({ ...v, key: u.id + ':' + v.w })));
