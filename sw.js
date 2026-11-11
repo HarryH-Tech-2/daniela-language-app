@@ -3,7 +3,7 @@
 //
 // When you add a file, add it to FILES and bump VERSION so installed copies pick it up.
 // `node test/files.test.js` checks that every unit in index.html is listed here.
-var VERSION = 'v14';
+var VERSION = 'v15';
 var CACHE = 'dale-' + VERSION;
 var FONT_CACHE = 'dale-fonts';
 var IMG_CACHE = 'dale-img'; // pictures never change name, so they live outside VERSION
@@ -14,8 +14,8 @@ try { importScripts('data/images.js'); } catch (e) { self.IMAGES = { stories: {}
 var FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'icon.svg', 'icon-192.png', 'icon-512.png', 'icon-maskable.png', 'apple-touch-icon.png',
-  'js/version.js', 'js/core.js', 'js/exercise.js', 'js/screens.js', 'js/games.js', 'js/everyday.js', 'js/music.js', 'js/songs.js', 'js/words.js', 'js/explain.js', 'js/talk.js', 'js/review.js',
-  'data/profile.js', 'data/games.js', 'data/everyday.js', 'data/songs.js', 'data/song-times.js', 'data/wordlist.js', 'data/explain.js', 'data/talks.js', 'data/images.js',
+  'js/version.js', 'js/core.js', 'js/exercise.js', 'js/screens.js', 'js/games.js', 'js/everyday.js', 'js/music.js', 'js/songs.js', 'js/words.js', 'js/explain.js', 'js/talk.js', 'js/review.js', 'js/nudge.js',
+  'data/profile.js', 'data/games.js', 'data/everyday.js', 'data/songs.js', 'data/song-times.js', 'data/wordlist.js', 'data/explain.js', 'data/talks.js', 'data/images.js', 'data/nudges.js',
   'data/units/home.js', 'data/units/dance.js', 'data/units/kitchen.js', 'data/units/dogs.js',
   'data/units/plans.js', 'data/units/law-basics.js', 'data/units/crime.js', 'data/units/gossip.js',
   'data/units/style.js', 'data/units/wellness.js', 'data/units/love.js', 'data/units/abroad.js',
@@ -73,6 +73,9 @@ self.addEventListener('fetch', function (e) {
   }
   if (url.origin !== location.origin) return;
 
+  // the server (api/*.mjs): always live, never cached
+  if (url.pathname.indexOf('/api/') >= 0) return;
+
   // sung songs (audio/songs/*.mp3): straight from the network, so the browser can ask for
   // the part it needs (range requests, which iPhone insists on for audio)
   if (url.pathname.indexOf('/audio/') >= 0) return;
@@ -97,5 +100,35 @@ self.addEventListener('fetch', function (e) {
       if (hit) { e.waitUntil(refresh); return hit; }
       return refresh.then(function (res) { return res || (req.mode === 'navigate' ? c.match('./') : res); });
     });
+  }));
+});
+
+// Scroll reminders (api/nudge.mjs): show the notification, and open its page when tapped.
+self.addEventListener('push', function (e) {
+  var d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || '¡Dale, Dani! 📚', {
+    body: d.body || 'Time for a little English.',
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    tag: d.tag || 'dale-nudge',
+    renotify: true,
+    data: { url: d.url || './' }
+  }));
+});
+
+self.addEventListener('notificationclick', function (e) {
+  e.notification.close();
+  var url = new URL((e.notification.data && e.notification.data.url) || './', self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i];
+      if (c.url.indexOf(self.registration.scope) === 0 && 'focus' in c) {
+        // the app is already open: bring it forward and tell it which page to show (js/nudge.js)
+        c.postMessage({ nudge: url });
+        return c.focus();
+      }
+    }
+    return self.clients.openWindow(url);
   }));
 });

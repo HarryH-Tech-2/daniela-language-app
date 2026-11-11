@@ -821,3 +821,12 @@ textarea { resize: vertical; line-height: 1.5; font-size: 17px; }
 .explain-gap { display: inline-block; min-width: 64px; padding: 0 6px; border-bottom: 3px solid var(--line); text-align: center; color: var(--ink-2); }
 .explain-gap.filled { color: var(--sea-d); border-color: var(--right); font-weight: 800; }
 @media (prefers-color-scheme: dark) { .explain-gap.filled { color: #7ff0d8; } }
+
+/* scroll reminders (js/nudge.js) */
+.nudge-setup { margin-top: 14px; }
+.nudge-setup summary { cursor: pointer; font-weight: 700; }
+.nudge-steps { margin: 12px 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; }
+.nudge-steps h3 { margin: 0 0 6px; font-size: 16px; }
+.nudge-link { display: block; margin: 8px 0; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--line) 45%, transparent); font-size: 12px; overflow-wrap: anywhere; user-select: all; }
+.nudge-word { cursor: default; margin-bottom: 16px; }
+.nudge-pic { display: block; width: 100%; max-height: 220px; object-fit: cover; border-radius: 14px; margin: 10px 0 4px; }

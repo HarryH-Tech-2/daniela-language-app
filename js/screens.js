@@ -864,6 +864,7 @@
     main.appendChild(inst);
 
     main.appendChild(cloudCard());
+    if (APP.nudgeCard) main.appendChild(APP.nudgeCard());
 
     var bk = el('section', 'card');
     bk.appendChild(el('h2', '', '💾 Backup'));
