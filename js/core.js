@@ -270,6 +270,18 @@
   APP.srsLearned = function () {
     return Object.keys(state.srs).filter(function (k) { return state.srs[k].box >= 3; }).length;
   };
+  // Review covers every lesson's words, plus the word-list groups marked review: true
+  // and “beyond”, whether or not she has opened that lesson yet. New ones are due today.
+  (function () {
+    var added = 0;
+    APP.allWords.forEach(function (v) {
+      var listed = v.unit === 'b2';
+      if (listed && v.w !== 'beyond' && !(window.WORDLIST || []).some(function (g) { return g.id === v.group && g.review; })) return;
+      var k = APP.wordKey(v);
+      if (!state.srs[k]) { state.srs[k] = { box: 0, due: APP.today() }; added++; }
+    });
+    if (added) try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  })();
 
   /* ---------- badges ---------- */
   APP.BADGES = [

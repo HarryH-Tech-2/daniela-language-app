@@ -582,11 +582,13 @@
 
   APP.route('review', function (main) {
     backBar(main, '#/', 'Review');
-    var due = APP.shuffle(APP.srsDue());
+    // words she has already started come first, then brand-new ones from every lesson
+    var due = APP.srsDue(), started = due.filter(function (v) { return S.srs[APP.wordKey(v)].box > 0; });
+    due = APP.shuffle(started).concat(APP.shuffle(due.filter(function (v) { return !S.srs[APP.wordKey(v)].box; })));
     var seen = APP.allWords.filter(function (v) { return S.srs[APP.wordKey(v)]; });
     var head = el('section', 'page-head');
     head.appendChild(el('h1', '', 'Word review'));
-    head.appendChild(el('p', 'muted', 'Words come back just before you’d forget them: after 1, 3, 7, 14 and 30 days. ' + APP.srsLearned() + ' learned so far, ' + seen.length + ' seen.'));
+    head.appendChild(el('p', 'muted', 'Words from every lesson, plus your reading words. They come back just before you’d forget them: after 1, 3, 7, 14 and 30 days. ' + APP.srsLearned() + ' learned so far, ' + seen.length + ' in your deck.'));
     main.appendChild(head);
 
     if (!seen.length) {

@@ -94,6 +94,7 @@ The song quiz (`#/game/songs/<id>`) blanks each word's `in` out of its line, so 
 ## B2 word list: `data/wordlist.js`
 
 Browsed at `#/words`, quizzed at `#/game/words/<group>`; every word can be added to Review.
+A group with `review: true` goes into Review automatically (so does every lesson word).
 
 ```js
 window.WORDLIST = [

@@ -163,5 +163,31 @@ window.EXPLAIN = [
       { q: 'I {gap} with you completely.', right: 'agree', wrong: ['am agree', 'am agreed'] },
       { q: 'The film was so long, I was {gap}.', right: 'bored', wrong: ['boring', 'bore'] }
     ]
+  },
+
+  {
+    id: 'look-like', emoji: '👀',
+    q: 'Why is it “What does it look like?” but “How does it look?”, with no “like”?',
+    short: '“look + adjective” describes an impression (It looks great), so you ask with “how”. “look like + noun” compares it to something (It looks like a palace), so you ask with “what”, and the “like” stays behind at the end because “what” is the thing after “like”.',
+    parts: [
+      { h: 'Two different patterns', t: '“Look” can be followed by an adjective: “It looks nice”, “You look tired”. Or by “like” + a noun: “It looks like a castle”, “She looks like her mum”. Each pattern has its own question.' },
+      { h: '“How does it look?” asks for an adjective', t: '“How” stands in for the adjective. Question: “How does my dress look?” Answer: “It looks amazing.” There’s no noun to compare with, so there’s no “like”. It usually asks for an opinion: is it good or bad?' },
+      { h: '“What does it look like?” asks for a noun', t: 'Here “what” stands in for the noun after “like”: “It looks like ___ (a castle)”. In English, when the question word moves to the front, the little word (the preposition) stays where it was, at the end. That’s why you get “like” at the end.' },
+      { h: 'The same thing happens everywhere', t: 'Who are you talking to? (I’m talking to Ana.) What are you thinking about? (I’m thinking about the trip.) Where are you from? (I’m from Barranquilla.) Spanish moves the preposition to the front, “¿De dónde eres?”, “¿Con quién hablas?”, but everyday English leaves it at the end.' },
+      { h: 'Which one do I use?', t: '“What does it look like?” is for describing appearance: shape, colour, size, what it resembles. Use it when you have never seen the thing: “What does your new flat look like?” “How does it look?” is for an opinion of something you can both see or imagine: “How does the cake look?” “Perfect!”' },
+      { h: 'People: three questions', t: '“What does she look like?” = her appearance (She’s tall with curly hair). “What is she like?” = her personality (She’s funny and kind). “How is she?” = her health or mood today (She’s fine, thanks).' }
+    ],
+    examples: [
+      { en: 'What does your new flat look like?', ok: true, note: 'It’s small, with big windows and a balcony.' },
+      { en: 'How does my hair look?', ok: true, note: 'It looks lovely!' },
+      { en: 'How does it look like?', ok: false, note: 'What does it look like? (or: How does it look?)' },
+      { en: 'What does it look?', ok: false, note: 'What does it look like?' },
+      { en: 'What is your boss like?', ok: true, note: 'personality: She’s strict but fair.' }
+    ],
+    tip: 'Spanish speakers often say “How does it look like?” from “¿Cómo se ve?” or “¿Cómo es?”. Remember: “how” never goes with “like”. How → adjective; what → like.',
+    check: [
+      { q: 'What does your brother {gap}?', right: 'look like', wrong: ['look', 'looks like'] },
+      { q: '{gap} does my dress look? Be honest!', right: 'How', wrong: ['What', 'How like'] }
+    ]
   }
 ];
