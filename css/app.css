@@ -830,3 +830,66 @@ textarea { resize: vertical; line-height: 1.5; font-size: 17px; }
 .nudge-link { display: block; margin: 8px 0; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--line) 45%, transparent); font-size: 12px; overflow-wrap: anywhere; user-select: all; }
 .nudge-word { cursor: default; margin-bottom: 16px; }
 .nudge-pic { display: block; width: 100%; max-height: 220px; object-fit: cover; border-radius: 14px; margin: 10px 0 4px; }
+
+/* ---------- pronunciation (js/daily.js: APP.pronBox) ---------- */
+
+.pron { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 6px 0 2px; }
+.pron-ipa { font-family: "Lucida Sans Unicode", "Segoe UI", system-ui, sans-serif; font-size: 16px; color: var(--blue); }
+.pron-say { font-size: 14px; font-weight: 700; color: var(--ink-2); letter-spacing: 0.02em; }
+.pron-btn {
+  font: inherit; font-size: 13px; font-weight: 700; min-height: 32px; padding: 4px 10px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink);
+}
+.pron-btn.on { background: var(--wrong-bg); border-color: var(--wrong); color: var(--wrong); }
+.pron-heard { flex-basis: 100%; font-size: 14px; color: var(--ink-2); min-height: 0; }
+.pron-heard:empty { display: none; }
+.pron-heard.ok { color: var(--sea-d); font-weight: 700; }
+.pron-heard.no { color: var(--orange); }
+@media (prefers-color-scheme: dark) { .pron-ipa { color: #9fb6ff; } .pron-heard.ok { color: #7ff0d8; } }
+
+/* ---------- review: four answers, typing, the deck at a glance ---------- */
+
+.flash-ipa { font-size: 15px; color: var(--ink-2); }
+.flash-acts.four { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.flash-acts.four .verdict { min-height: 60px; font-size: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px; }
+.verdict-l { display: block; }
+.verdict-t { display: block; font-size: 11px; font-weight: 700; opacity: 0.85; }
+.verdict.hard { background: var(--sun-d); box-shadow: 0 5px 0 #b07c00; }
+.verdict.easy { background: var(--blue); box-shadow: 0 5px 0 var(--blue-d); }
+.review-switches { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.review-tools { gap: 10px; flex-wrap: wrap; }
+.flash-acts .review-type { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 10px; }
+.review-type .blank-input { width: 100%; font-size: 20px; }
+.review-type .blank-input.right { border-color: var(--right); background: var(--right-bg); }
+.review-type .blank-input.wrong { border-color: var(--wrong); background: var(--wrong-bg); }
+.review-type .big-btn { margin-top: 0; }
+.deck-stats { padding: 14px 16px; }
+.deck-bars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.deck-b { display: flex; flex-direction: column; align-items: center; padding: 8px 4px; border-radius: 14px; background: var(--bg-2); }
+.deck-n { font-family: var(--display); font-size: 22px; font-weight: 800; }
+.deck-l { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.deck-learning .deck-n { color: var(--orange); }
+.deck-known .deck-n { color: var(--blue); }
+.deck-mastered .deck-n { color: var(--sea-d); }
+.deck-week { display: flex; justify-content: space-between; align-items: flex-end; gap: 4px; margin: 14px 0 6px; }
+.deck-day { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.deck-bar { width: 70%; max-width: 26px; border-radius: 6px 6px 2px 2px; background: color-mix(in srgb, var(--sea) 70%, transparent); }
+.deck-day-n { font-size: 12px; font-weight: 800; }
+.deck-day-l { font-size: 11px; color: var(--ink-2); }
+.deck-stats p { margin: 6px 0 0; }
+@media (prefers-color-scheme: dark) { .deck-mastered .deck-n { color: #7ff0d8; } .deck-known .deck-n { color: #9fb6ff; } }
+
+/* ---------- today's 3 words (js/daily.js) ---------- */
+
+.daily-done { font-size: 13px; font-weight: 800; color: var(--sea-d); background: var(--right-bg); border-radius: 999px; padding: 3px 10px; }
+.daily-list { list-style: none; padding: 0; margin: 8px 0 12px; }
+.daily-list li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.daily-list li:last-child { border-bottom: 0; }
+.daily-w { display: flex; flex-direction: column; min-width: 0; }
+.daily-word { font-family: var(--display); font-size: 22px; font-weight: 800; line-height: 1.15; }
+.daily-meta { font-size: 14px; color: var(--ink-2); }
+.daily-card .big-btn, .daily-card .ghost-btn { display: flex; justify-content: center; text-decoration: none; }
+.view-daily > .big-btn { display: flex; justify-content: center; text-decoration: none; margin: 16px 0; }
+.daily-yrow { margin: 6px 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.daily-tricky { text-align: left; max-width: 420px; margin: 12px auto; }
+.daily-tricky p { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 6px 0; }

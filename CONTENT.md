@@ -95,12 +95,14 @@ The song quiz (`#/game/songs/<id>`) blanks each word's `in` out of its line, so 
 
 Browsed at `#/words`, quizzed at `#/game/words/<group>`; every word can be added to Review.
 A group with `review: true` goes into Review automatically (so does every lesson word).
+Every item needs `ipa` (British, in slashes) and `pron` (an easy respelling with the stressed syllable in capitals).
+To make a new group the next “today's 3 words”, put its id at the front of `FIRST` in `js/daily-pick.js`.
 
 ```js
 window.WORDLIST = [
   { id: 'linking', icon: '🔗', title: 'Linking words', short: 'Linking', intro: 'One or two sentences.',
     items: [                                   // 12+ per group
-      { w: 'beyond', pos: 'preposition', def: '…', ex: 'There’s a little beach just beyond the hotel.',
+      { w: 'beyond', pos: 'preposition', ipa: '/biˈjɒnd/', pron: 'bee-YOND', def: '…', ex: 'There’s a little beach just beyond the hotel.',
         es: 'más allá de', note: 'Optional tip.', near: [] }   // near: as in Everyday English
     ] }
 ];

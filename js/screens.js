@@ -69,7 +69,7 @@
     chips.appendChild(chip('🔥', streak + ' day' + (streak === 1 ? '' : 's'), 'streak'));
     chips.appendChild(chip('⚡', 'Level ' + lvl.n, 'level'));
     chips.appendChild(chip('🎯', APP.todayXP() + '/' + S.settings.goal + ' XP today', 'goal'));
-    var due = APP.srsDue().length;
+    var due = APP.srsCount();
     if (due) { var c = chip('🃏', due + ' word' + (due === 1 ? '' : 's') + ' to review', 'due'); c.href = '#/review'; chips.appendChild(c); }
     main.appendChild(chips);
 
@@ -100,23 +100,8 @@
       main.appendChild(crown);
     }
 
-    // word of the day
-    if (APP.allWords.length) {
-      var w = APP.allWords[APP.dayNumber(APP.today()) * 7 % APP.allWords.length];
-      var wd = el('section', 'wotd');
-      var head = el('div', 'wotd-head');
-      head.appendChild(el('span', 'wotd-label', 'Word of the day'));
-      head.appendChild(APP.speakBtn(w.w));
-      wd.appendChild(head);
-      var wpic = APP.wordImg(w);
-      if (wpic) { wd.classList.add('has-img'); wd.appendChild(APP.img(wpic, 'wotd-img', w.w)); }
-      wd.appendChild(el('p', 'wotd-word', w.w));
-      wd.appendChild(el('p', 'wotd-def', w.def));
-      var es = el('p', 'wotd-es', '🇨🇴 ' + w.es);
-      wd.appendChild(es);
-      wd.appendChild(el('p', 'wotd-ex', '“' + w.ex + '”'));
-      main.appendChild(wd);
-    }
+    // today's 3 words and the daily quiz (js/daily.js)
+    if (APP.dailyCard) main.appendChild(APP.dailyCard());
 
     var quick = el('section', 'quick');
     quick.appendChild(tile('#/review', '🃏', 'Review words', due ? due + ' due now' : 'All caught up'));
@@ -582,98 +567,189 @@
 
   APP.route('review', function (main) {
     backBar(main, '#/', 'Review');
-    // words she has already started come first, then brand-new ones from every lesson
-    var due = APP.srsDue(), started = due.filter(function (v) { return S.srs[APP.wordKey(v)].box > 0; });
-    due = APP.shuffle(started).concat(APP.shuffle(due.filter(function (v) { return !S.srs[APP.wordKey(v)].box; })));
+    var q = APP.srsQueue();
     var seen = APP.allWords.filter(function (v) { return S.srs[APP.wordKey(v)]; });
     var head = el('section', 'page-head');
     head.appendChild(el('h1', '', 'Word review'));
-    head.appendChild(el('p', 'muted', 'Words from every lesson, plus your reading words. They come back just before you’d forget them: after 1, 3, 7, 14 and 30 days. ' + APP.srsLearned() + ' learned so far, ' + seen.length + ' in your deck.'));
+    head.appendChild(el('p', 'muted', 'Each word comes back just before you’d forget it. Every time you remember it, the wait gets longer: 1 day, 3, 7, 14, 30, 60, then 120. ' +
+      APP.srsLearned() + ' learned so far, ' + seen.length + ' in your deck.'));
     main.appendChild(head);
+    main.appendChild(deckStats(q));
 
     if (!seen.length) {
       main.appendChild(empty('🌱', 'No words yet', 'Open a lesson and go through its Words step. They’ll show up here to review.', '#/unit/' + (APP.nextUnit() || APP.units[0] || {}).id, 'Start a lesson'));
       return;
     }
-    if (!due.length) {
-      var e = empty('✨', 'All caught up!', 'Nothing due today. Come back tomorrow, or practise some anyway.', null);
-      e.appendChild(btn('big-btn', 'Practise 10 random words', function () { run(APP.pick(seen, 10), true); e.remove(); }));
+    // words she has already started come first (shuffled), then new ones, today's 3 words first
+    var cards = APP.shuffle(q.started).concat(q.fresh);
+    if (!cards.length) {
+      var e = empty('✨', 'All caught up!', (q.waiting ? 'That’s all your new words for today (' + S.settings.newPerDay + ' a day; you can change it in Me). ' : 'Nothing due today. ') + 'Come back tomorrow, or practise some anyway.', null);
+      var row = el('div', 'row-btns center');
+      row.appendChild(btn('big-btn', 'Practise 10 random words', function () { e.remove(); run(APP.pick(seen.filter(function (v) { return S.srs[APP.wordKey(v)].box; }).concat(seen).slice(0, 400), 10), true); }));
+      if (q.waiting) row.appendChild(btn('ghost-btn', '➕ 5 more new words', function () {
+        S.srsNew = { date: APP.today(), n: Math.max(0, ((S.srsNew || {}).date === APP.today() ? S.srsNew.n : 0) - 5) };
+        APP.save(); APP.render();
+      }));
+      e.appendChild(row);
       main.appendChild(e);
       return;
     }
-    run(due.slice(0, 20), false);
+    run(cards.slice(0, 30), false, cards.length > 30);
 
-    function run(cards, extra) {
-      var reverse = false, i = 0, right = 0;
+    // extra: practice only, nothing graded. more: there's another batch after this one.
+    function run(cards, extra, more) {
+      cards = cards.slice();
+      var reverse = false, typing = false, i = 0, right = 0, graded = 0, again = {};
       var tools = el('div', 'review-tools');
-      var sw = el('label', 'switch');
-      var cb = el('input'); cb.type = 'checkbox';
-      sw.appendChild(cb); sw.appendChild(el('span', '', 'Spanish first'));
-      cb.addEventListener('change', function () { reverse = cb.checked; draw(); });
-      tools.appendChild(sw);
+      var opts = el('div', 'review-switches');
+      opts.appendChild(toggle('Spanish first', function (on) { reverse = on; draw(); }));
+      opts.appendChild(toggle('✍️ Type it', function (on) { typing = on; draw(); }));
+      tools.appendChild(opts);
       var count = el('span', 'muted', '');
       tools.appendChild(count);
       main.appendChild(tools);
       var stage = el('div', 'flash-wrap');
       main.appendChild(stage);
-      var acts = el('div', 'flash-acts');
-      var no = btn('verdict no', 'Again', function () { grade(false); });
-      var yes = btn('verdict yes', 'Got it', function () { grade(true); });
-      acts.appendChild(no); acts.appendChild(yes);
+      var acts = el('div', 'flash-acts four');
       main.appendChild(acts);
+
+      function toggle(label, on) {
+        var sw = el('label', 'switch');
+        var cb = el('input'); cb.type = 'checkbox';
+        sw.appendChild(cb); sw.appendChild(el('span', '', label));
+        cb.addEventListener('change', function () { on(cb.checked); });
+        return sw;
+      }
+      function when(days) { return days < 1 ? 'today' : days === 1 ? '1 day' : days < 30 ? days + ' days' : days < 60 ? '1 month' : Math.round(days / 30) + ' months'; }
 
       function draw() {
         if (i >= cards.length) return done();
-        count.textContent = (i + 1) + ' / ' + cards.length;
-        var v = cards[i];
+        var v = cards[i], k = APP.wordKey(v), r = S.srs[k] || {};
+        count.textContent = (i + 1) + ' / ' + cards.length + (!extra && !r.box && !again[k] ? ' · new' : again[k] ? ' · again' : '');
         var card = btn('flash');
         var front = el('span', 'flash-side flash-front'), back = el('span', 'flash-side flash-back');
         var fp = APP.wordImg(v);
-        if (fp) front.appendChild(APP.img(fp, 'flash-img', ''));
-        if (!reverse) {
+        if (fp && !typing) front.appendChild(APP.img(fp, 'flash-img', ''));
+        if (typing) {
+          front.appendChild(el('span', 'flash-word es small', v.es));
+          front.appendChild(el('span', 'flash-def', v.def));
+          front.appendChild(el('span', 'muted', 'Write it in English below'));
+        } else if (!reverse) {
           front.appendChild(el('span', 'flash-word', v.w));
           front.appendChild(el('span', 'pos', v.pos));
+          if (v.ipa) front.appendChild(el('span', 'flash-ipa', v.ipa));
         } else {
           front.appendChild(el('span', 'flash-word es', v.es));
           front.appendChild(el('span', 'muted', 'How do you say it in English?'));
         }
-        front.appendChild(el('span', 'flash-hint', 'tap to flip'));
+        if (!typing) front.appendChild(el('span', 'flash-hint', 'tap to flip'));
         back.appendChild(el('span', 'flash-word small', v.w));
+        if (v.ipa) back.appendChild(el('span', 'flash-ipa', v.ipa + (v.pron ? ' · ' + v.pron : '')));
         back.appendChild(el('span', 'flash-def', v.def));
         back.appendChild(el('span', 'flash-es', '🇨🇴 ' + v.es));
         back.appendChild(el('span', 'flash-ex', '“' + v.ex + '”'));
         card.appendChild(front); card.appendChild(back);
         card.addEventListener('click', function () {
+          if (typing && !card.classList.contains('flipped')) return;
           card.classList.toggle('flipped');
           if (card.classList.contains('flipped')) APP.speak(v.w);
         });
         stage.replaceChildren(card);
-        if (!reverse) setTimeout(function () { APP.speak(v.w); }, 200);
+        acts.replaceChildren();
+        if (typing) {
+          var form = el('div', 'review-type');
+          var inp = el('input', 'blank-input'); inp.type = 'text'; inp.autocomplete = 'off'; inp.autocapitalize = 'off'; inp.spellcheck = false;
+          inp.placeholder = 'The English word…'; inp.setAttribute('aria-label', 'The English word');
+          var go = btn('big-btn', 'Check', check);
+          inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') check(); });
+          form.appendChild(inp); form.appendChild(go);
+          acts.appendChild(form);
+          setTimeout(function () { inp.focus({ preventScroll: true }); }, 60);
+          function check() {
+            if (!inp.value.trim()) { inp.focus(); return; }
+            var ok = APP.same(inp.value, v.w);
+            inp.disabled = true; go.disabled = true;
+            inp.classList.add(ok ? 'right' : 'wrong');
+            card.classList.add('flipped'); APP.speak(v.w);
+            // right: Good, or Hard if it wasn't quite; wrong: Again
+            form.appendChild(btn('big-btn', ok ? 'Next ✓' : 'Next (it comes back) ↻', function () { grade(ok ? 2 : 0); }));
+          }
+        } else {
+          [[0, 'Again', 'no'], [1, 'Hard', 'hard'], [2, 'Good', 'yes'], [3, 'Easy', 'easy']].forEach(function (g) {
+            var b = btn('verdict ' + g[2], '', function () { grade(g[0]); });
+            b.appendChild(el('span', 'verdict-l', g[1]));
+            if (!extra && !again[k]) b.appendChild(el('span', 'verdict-t', g[0] === 0 ? 'again soon' : when(APP.srsPlan(v, g[0]).days)));
+            acts.appendChild(b);
+          });
+        }
+        if (!reverse && !typing) setTimeout(function () { APP.speak(v.w); }, 200);
       }
-      function grade(ok) {
-        var v = cards[i];
-        if (!extra) APP.srsGrade(v, ok);
-        if (ok) right++;
-        APP.sound(ok ? 'right' : 'tap');
-        APP.award(ok ? 3 : 1);
+      function grade(g) {
+        var v = cards[i], k = APP.wordKey(v);
+        // only the first answer counts for the schedule; a word she missed comes round
+        // again a few cards later until she gets it, for practice
+        if (!extra && !again[k]) { APP.srsGrade(v, g); graded++; if (g) right++; }
+        else if (extra && g) right++;
+        if (g === 0) { again[k] = (again[k] || 0) + 1; if (again[k] <= 3) cards.splice(Math.min(cards.length, i + 4), 0, v); }
+        APP.sound(g ? 'right' : 'tap');
+        APP.award(g ? 3 : 1);
         i++;
         draw();
       }
       function done() {
         tools.remove(); acts.remove();
-        var d = empty('🎉', right + ' / ' + cards.length + ' remembered', right === cards.length ? 'Perfect memory!' : 'The ones you missed will come back tomorrow.', '#/', 'Back home');
+        var total = extra ? cards.length : graded;
+        var f = APP.srsForecast(2)[1];
+        var d = empty('🎉', right + ' / ' + total + ' remembered', (right === total ? 'Perfect memory! ' : 'You went over the ones you missed until they stuck. ') +
+          (f ? 'Tomorrow: ' + f + ' word' + (f === 1 ? '' : 's') + ' to review.' : ''), more ? null : '#/', 'Back home');
+        if (more) d.appendChild(btn('big-btn', 'Keep going', function () { APP.render(); }));
         stage.replaceChildren(d);
         APP.checkBadges();
       }
       document.onkeydown = function (e) {
         if (!document.body.contains(stage)) { document.onkeydown = null; return; }
-        if (e.key === ' ') { e.preventDefault(); var f = stage.querySelector('.flash'); if (f) f.click(); }
-        if (e.key === 'ArrowLeft') grade(false);
-        if (e.key === 'ArrowRight') grade(true);
+        if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+        if (e.key === ' ') { e.preventDefault(); var fl = stage.querySelector('.flash'); if (fl) fl.click(); }
+        if (typing) return;
+        if (e.key === 'ArrowLeft' || e.key === '1') grade(0);
+        if (e.key === '2') grade(1);
+        if (e.key === 'ArrowRight' || e.key === '3') grade(2);
+        if (e.key === '4') grade(3);
       };
       draw();
     }
   });
+
+  // the deck at a glance: how strong it is, and how many words come back each day this week
+  function deckStats(q) {
+    var s = APP.srsStrength(), box = el('section', 'card deck-stats');
+    var bars = el('div', 'deck-bars');
+    [['fresh', 'New', s.fresh], ['learning', 'Learning', s.learning], ['known', 'Known', s.known], ['mastered', 'Mastered', s.mastered]].forEach(function (x) {
+      var c = el('div', 'deck-b deck-' + x[0]);
+      c.appendChild(el('span', 'deck-n', String(x[2])));
+      c.appendChild(el('span', 'deck-l', x[1]));
+      bars.appendChild(c);
+    });
+    box.appendChild(bars);
+    var fc = APP.srsForecast(7), max = Math.max.apply(null, fc.concat([1]));
+    var week = el('div', 'deck-week');
+    week.setAttribute('aria-label', 'Words coming back each day this week');
+    var names = ['Today', 'Tmrw'];
+    fc.forEach(function (n, d) {
+      var col = el('div', 'deck-day');
+      var bar = el('span', 'deck-bar');
+      bar.style.height = Math.max(4, Math.round(n / max * 44)) + 'px';
+      col.appendChild(el('span', 'deck-day-n', String(n)));
+      col.appendChild(bar);
+      var dt = new Date(Date.now() + d * 864e5);
+      col.appendChild(el('span', 'deck-day-l', names[d] || dt.toLocaleDateString('en-GB', { weekday: 'short' })));
+      week.appendChild(col);
+    });
+    box.appendChild(week);
+    box.appendChild(el('p', 'muted small', 'Today: ' + q.started.length + ' to review and ' + q.fresh.length + ' new' +
+      (q.waiting > q.fresh.length ? ' (' + (q.waiting - q.fresh.length) + ' more new words are waiting their turn)' : '') + '.'));
+    return box;
+  }
 
   function empty(icon, title, text, href, label) {
     var e = el('section', 'empty');
@@ -836,6 +912,7 @@
     var set = el('section', 'card settings');
     set.appendChild(el('h2', '', 'Settings'));
     set.appendChild(field('Daily goal', select([[30, 'Relaxed · 30 XP'], [50, 'Regular · 50 XP'], [100, 'Serious · 100 XP'], [150, 'Intense · 150 XP']], S.settings.goal, function (v) { S.settings.goal = +v; APP.save(); })));
+    set.appendChild(field('New words a day', select([[5, 'Gentle · 5'], [10, 'Regular · 10'], [15, 'Keen · 15'], [20, 'Lots · 20']], S.settings.newPerDay, function (v) { S.settings.newPerDay = +v; APP.save(); })));
     set.appendChild(field('Speaking speed', select([[0.8, 'Slow'], [0.95, 'Normal'], [1.1, 'Fast']], S.settings.rate, function (v) { S.settings.rate = +v; APP.save(); APP.speak('This is how fast I will speak.'); })));
     var vs = APP.voices();
     if (vs.length) {
@@ -866,6 +943,7 @@
     main.appendChild(inst);
 
     main.appendChild(cloudCard());
+    if (APP.dailyRemindCard) main.appendChild(APP.dailyRemindCard());
     if (APP.nudgeCard) main.appendChild(APP.nudgeCard());
 
     var bk = el('section', 'card');

@@ -62,7 +62,7 @@
     return {
       xp: 0, days: {}, streak: { last: '', count: 0, best: 0, freezes: 1 },
       units: {}, srs: {}, games: {}, journal: [], badges: {}, seenWords: 0,
-      settings: { rate: 0.95, voice: '', sound: true, goal: 50 }, created: APP.today()
+      settings: { rate: 0.95, voice: '', sound: true, goal: 50, newPerDay: 10 }, created: APP.today()
     };
   }
   var state;
@@ -247,8 +247,16 @@
   };
 
   /* ---------- spaced repetition ---------- */
-  // Leitner boxes 1-5; a word comes back after 1, 3, 7, 14, 30 days.
-  var GAPS = [0, 1, 3, 7, 14, 30];
+  // Leitner boxes 1-7: a word comes back after 1, 3, 7, 14, 30, 60 and 120 days. Box 0 is
+  // a word she hasn't studied yet. Four answers:
+  //   0 Again: back to box 1 (tomorrow), and it comes round again in the same session
+  //   1 Hard:  stays in its box, with half the wait
+  //   2 Good:  the next box
+  //   3 Easy:  skips a box
+  // New words come in at most settings.newPerDay a day, today's 3 words first, so the
+  // deck grows steadily instead of 300 words landing at once.
+  var GAPS = [0, 1, 3, 7, 14, 30, 60, 120], TOP = GAPS.length - 1;
+  APP.SRS_GAPS = GAPS;
   APP.srsAdd = function (v) {
     var k = APP.wordKey(v);
     if (!state.srs[k]) { state.srs[k] = { box: 0, due: APP.today() }; state.seenWords++; }
@@ -260,12 +268,70 @@
       return r && dayNumber(r.due) <= t;
     });
   };
-  APP.srsGrade = function (v, ok) {
-    var r = state.srs[APP.wordKey(v)] || { box: 0 };
-    r.box = ok ? Math.min(5, r.box + 1) : 1;
-    r.due = APP.today(new Date(Date.now() + GAPS[r.box] * 864e5));
-    state.srs[APP.wordKey(v)] = r;
+  function newToday() { var n = state.srsNew || {}; return n.date === APP.today() ? n.n || 0 : 0; }
+  APP.srsNewLeft = function () { return Math.max(0, (state.settings.newPerDay || 10) - newToday()); };
+  // What Review has for her today: every started word that's due, plus as many brand-new
+  // ones as today's allowance leaves, today's 3 words first.
+  APP.srsQueue = function () {
+    var started = [], fresh = [], daily = APP.dailyWords();
+    APP.srsDue().forEach(function (v) { (state.srs[APP.wordKey(v)].box ? started : fresh).push(v); });
+    function rank(v) { var i = daily.indexOf(v); return i < 0 ? 9 : i; }
+    fresh.sort(function (a, b) { return rank(a) - rank(b); });
+    return { started: started, fresh: fresh.slice(0, APP.srsNewLeft()), waiting: fresh.length };
+  };
+  APP.srsCount = function () { var q = APP.srsQueue(); return q.started.length + q.fresh.length; };
+  // where an answer sends a word: its new box and how many days until it's back
+  APP.srsPlan = function (v, grade) {
+    var box = (state.srs[APP.wordKey(v)] || {}).box || 0;
+    if (grade === 0) return { box: 1, days: GAPS[1] };
+    if (grade === 1) { var b = Math.max(1, box); return { box: b, days: Math.max(1, Math.round(GAPS[b] / 2)) }; }
+    var nb = Math.min(TOP, box + (grade === 3 ? 2 : 1));
+    return { box: nb, days: GAPS[nb] };
+  };
+  // grade: 0-3 as above (true/false still work, as Good/Again)
+  APP.srsGrade = function (v, grade) {
+    if (grade === true) grade = 2; else if (grade === false || grade === undefined) grade = 0;
+    var k = APP.wordKey(v), r = state.srs[k] || { box: 0 };
+    if (!state.srs[k]) state.seenWords++;
+    if (!r.box) state.srsNew = { date: APP.today(), n: newToday() + 1 };
+    var p = APP.srsPlan(v, grade);
+    r.box = p.box;
+    r.due = APP.today(new Date(Date.now() + p.days * 864e5));
+    r.last = APP.today();
+    r.reps = (r.reps || 0) + 1;
+    if (!grade) r.lapses = (r.lapses || 0) + 1;
+    state.srs[k] = r;
     APP.save();
+  };
+  // how strong the deck is: new (box 0), learning (1-2), known (3-4), mastered (5+)
+  APP.srsStrength = function () {
+    var out = { fresh: 0, learning: 0, known: 0, mastered: 0 };
+    Object.keys(state.srs).forEach(function (k) {
+      var b = state.srs[k].box || 0;
+      out[b === 0 ? 'fresh' : b <= 2 ? 'learning' : b <= 4 ? 'known' : 'mastered']++;
+    });
+    return out;
+  };
+  // how many studied words come back on each of the next n days (day 0 = today, overdue too)
+  APP.srsForecast = function (n) {
+    var t = dayNumber(APP.today()), out = [];
+    for (var i = 0; i < n; i++) out.push(0);
+    Object.keys(state.srs).forEach(function (k) {
+      var r = state.srs[k];
+      if (!r.box) return;
+      var d = Math.max(0, dayNumber(r.due) - t);
+      if (d < n) out[d]++;
+    });
+    return out;
+  };
+  // Today's 3 words (js/daily-pick.js, shared with the notifications on the server)
+  var dailyCache = {};
+  APP.dailyWords = function (date) {
+    date = date || APP.today();
+    if (dailyCache[date]) return dailyCache[date];
+    if (!window.DAILY_PICK) return [];
+    var tagged = APP.allWords.map(function (v) { return { key: APP.wordKey(v), group: v.group, v: v }; });
+    return (dailyCache[date] = window.DAILY_PICK(tagged, date).map(function (x) { return x.v; }));
   };
   APP.srsLearned = function () {
     return Object.keys(state.srs).filter(function (k) { return state.srs[k].box >= 3; }).length;
@@ -289,6 +355,7 @@
     { id: 'streak3', icon: '🔥', name: 'On fire', desc: 'A 3-day streak', test: function () { return state.streak.best >= 3; } },
     { id: 'streak7', icon: '🌶️', name: 'Picante', desc: 'A 7-day streak', test: function () { return state.streak.best >= 7; } },
     { id: 'streak30', icon: '👑', name: 'Reina', desc: 'A 30-day streak', test: function () { return state.streak.best >= 30; } },
+    { id: 'daily7', icon: '📅', name: 'Three a day', desc: 'Do the daily 3-word quiz on 7 days', test: function () { return (state.dailyDone || 0) >= 7; } },
     { id: 'words50', icon: '📚', name: 'Bookworm', desc: 'Learn 50 words', test: function () { return APP.srsLearned() >= 50; } },
     { id: 'words150', icon: '🧠', name: 'Walking dictionary', desc: 'Learn 150 words', test: function () { return APP.srsLearned() >= 150; } },
     { id: 'stage1', icon: '💃', name: 'Warmed up', desc: 'Finish every B1+ lesson', test: function () { return stageDone(1); } },
@@ -506,6 +573,7 @@
     fn(main, parts.slice(1));
     window.scrollTo(0, 0);
   }
+  APP.render = render;
   APP.start = function () {
     window.addEventListener('hashchange', render);
     render();

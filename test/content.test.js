@@ -254,6 +254,8 @@ if (fs.existsSync(wlFile)) {
         ['w', 'pos', 'def', 'es', 'ex'].forEach(function (f) { if (!str(v[f])) err(at, 'needs ' + f); });
         if (POS.indexOf(v.pos) < 0) err(at, 'unknown pos ' + v.pos);
         if (v.note !== undefined && !str(v.note)) err(at, 'note must be a string');
+        if (!str(v.ipa) || !/^\/[^/]+\/$/.test(v.ipa)) err(at, 'needs ipa, in slashes: /ˈwɪzdəm/');
+        if (!str(v.pron)) err(at, 'needs pron, an easy respelling: WIZ-dum');
         var key = String(v.w).toLowerCase();
         if (allL[key]) err(at, 'duplicate ' + v.w); allL[key] = 1;
         var es1 = String(v.es).split(' / ')[0];

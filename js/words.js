@@ -12,7 +12,7 @@
     APP.backBar(main, '#/', '');
     var head = el('section', 'page-head');
     head.appendChild(el('h1', '', 'B2 word list'));
-    head.appendChild(el('p', 'muted', 'Words and phrases that take you from B1 to B2. Tap 🔊 to hear one, tap a card to see the Spanish, and add the ones you want to remember to Review.'));
+    head.appendChild(el('p', 'muted', 'Words and phrases that take you from B1 to B2. Tap 🔊 to hear one (twice for slow), 🎙️ to check how you say it, tap a card to see the Spanish, and add the ones you want to remember to Review.'));
     main.appendChild(head);
 
     var tabs = el('nav', 'steps');
@@ -56,6 +56,7 @@
       top.appendChild(APP.speakBtn(v.w));
       c.appendChild(top);
       if (v.pos) c.appendChild(el('span', 'pos', v.pos));
+      if (v.ipa) c.appendChild(APP.pronBox(v));
       c.appendChild(el('p', 'vcard-def', v.def));
       var ex = el('p', 'vcard-ex');
       ex.appendChild(document.createTextNode(v.ex + ' '));

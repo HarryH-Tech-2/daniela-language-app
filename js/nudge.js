@@ -60,6 +60,85 @@
     });
   }
 
+  // 3 words a day: a notification at 9:00, 14:00 and 19:00 with one of today's words
+  // (js/daily.js). Uses the same push subscription as the scroll reminders, but needs no
+  // Shortcuts: the server knows the time.
+  var TIMES = { early: ['08:00', '13:00', '18:00'], usual: ['09:00', '14:00', '19:00'], late: ['10:00', '15:00', '21:00'] };
+  APP.dailyRemindCard = function () {
+    var card = el('section', 'card nudge-card');
+    card.appendChild(el('h2', '', '📅 3 words a day'));
+    card.appendChild(el('p', '', 'Three notifications a day, each with one of today’s 3 words, how to say it and what it means. The last one opens a 10-question quiz on them.'));
+    var body = el('div');
+    card.appendChild(body);
+    draw();
+    return card;
+
+    function draw() {
+      body.replaceChildren();
+      if (!canPush() || !installed()) {
+        body.appendChild(el('p', 'muted', !installed()
+          ? '📱 This works in the app on your home screen. Add it (see “Use it offline” below), open it from the icon, and come back here.'
+          : 'This phone can’t get notifications from the app. On iPhone you need iOS 16.4 or newer: Settings → General → Software Update.'));
+        return;
+      }
+      if (!S.settings.passcode) {
+        body.appendChild(el('p', 'muted', 'Type the passcode (the same one as the AI partner) in Scroll reminders below first.'));
+        return;
+      }
+      if (Notification.permission === 'denied') {
+        body.appendChild(el('p', 'muted', 'Notifications are blocked for this app. Turn them on in Settings → Notifications → Dale Dani, then come back.'));
+        return;
+      }
+      var times = TIMES[S.settings.dailyTimes] || TIMES.usual;
+      if (!S.settings.dailyOn || !S.settings.nudgeKey || Notification.permission !== 'granted') {
+        var on = btn('big-btn', '🔔 Send me 3 words a day', function () {
+          on.disabled = true;
+          (S.settings.nudgeKey && Notification.permission === 'granted' ? Promise.resolve() : turnOn())
+            .then(function () { return call({ action: 'daily', key: S.settings.nudgeKey, on: true, times: times }); })
+            .then(function () { S.settings.dailyOn = true; APP.save(); APP.toast('📅 3 words a day: on'); draw(); }, function (e) {
+              if (e.denied) APP.toast('No problem. You can turn them on later.'); else failed(e);
+              on.disabled = false;
+            });
+        });
+        body.appendChild(on);
+        return;
+      }
+      body.appendChild(el('p', 'muted', '✅ On: at ' + times.join(', ') + '.'));
+      var pick = el('select', '');
+      [['early', 'Early · 8:00, 13:00, 18:00'], ['usual', 'Usual · 9:00, 14:00, 19:00'], ['late', 'Late · 10:00, 15:00, 21:00']].forEach(function (o) {
+        var op = el('option', '', o[1]); op.value = o[0];
+        if (o[0] === (S.settings.dailyTimes || 'usual')) op.selected = true;
+        pick.appendChild(op);
+      });
+      pick.addEventListener('change', function () {
+        call({ action: 'daily', key: S.settings.nudgeKey, on: true, times: TIMES[pick.value] }).then(function () {
+          S.settings.dailyTimes = pick.value; APP.save(); APP.toast('Times changed'); draw();
+        }, failed);
+      });
+      var lab = el('label', 'field');
+      lab.appendChild(el('span', 'field-l', 'When'));
+      lab.appendChild(pick);
+      body.appendChild(lab);
+      var row = el('div', 'row-btns');
+      var test = btn('ghost-btn small', 'Send me today’s first word now', function () {
+        test.disabled = true;
+        call({ action: 'dailytest', key: S.settings.nudgeKey }).then(function () { APP.toast('Sent! It may take a few seconds.'); }, failed)
+          .then(function () { test.disabled = false; });
+      });
+      row.appendChild(test);
+      row.appendChild(btn('ghost-btn small danger', 'Turn off', function () {
+        call({ action: 'daily', key: S.settings.nudgeKey, on: false }).then(function () {
+          S.settings.dailyOn = false; APP.save(); APP.toast('3 words a day: off'); draw();
+        }, failed);
+      }));
+      body.appendChild(row);
+      // if the phone's subscription has gone (or reminders were turned off on the server), say so
+      call({ action: 'status', key: S.settings.nudgeKey }).then(function (d) {
+        if (!d.subscribed || !(d.daily && d.daily.on)) { S.settings.dailyOn = false; if (!d.subscribed) S.settings.nudgeKey = ''; APP.save(); draw(); }
+      }, function () {});
+    }
+  };
+
   APP.nudgeCard = function () {
     var card = el('section', 'card nudge-card');
     card.appendChild(el('h2', '', '🔔 Scroll reminders'));
@@ -129,6 +208,12 @@
       body.appendChild(how);
 
       body.appendChild(btn('ghost-btn small danger', 'Turn off scroll reminders', function () {
+        // the daily words use the same notifications: keep them, the automations are what start scroll reminders
+        if (S.settings.dailyOn) {
+          S.settings.nudgeSetUp = false; APP.save();
+          APP.toast('Delete the two automations in Shortcuts and the scroll reminders stop. Your 3 words a day carry on.');
+          return;
+        }
         call({ action: 'unsubscribe', key: S.settings.nudgeKey }).then(function () {
           return navigator.serviceWorker.ready.then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (s) { return s && s.unsubscribe(); });
         }).then(function () {
@@ -191,6 +276,7 @@
       var pic = APP.wordImg(v);
       if (pic) c.appendChild(APP.img(pic, 'nudge-pic', v.w));
       if (v.pos) c.appendChild(el('span', 'pos', v.pos));
+      if (v.ipa) c.appendChild(APP.pronBox(v));
       c.appendChild(el('p', 'vcard-def', v.def));
       var ex = el('p', 'vcard-ex');
       ex.appendChild(document.createTextNode(v.ex + ' '));
@@ -241,7 +327,7 @@
     var next = el('section', 'card');
     next.appendChild(el('h2', '', 'Five minutes for English instead?'));
     var go = el('div', 'row-btns');
-    var due = APP.srsDue().length;
+    var due = APP.srsCount();
     if (due) go.appendChild(btn('big-btn', '🃏 Review ' + due + ' word' + (due === 1 ? '' : 's'), function () { APP.go('#/review'); }));
     var u = APP.nextUnit();
     if (u) go.appendChild(btn(due ? 'ghost-btn' : 'big-btn', u.emoji + ' Carry on: ' + u.title, function () { APP.go('#/unit/' + u.id); }));

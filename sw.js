@@ -3,7 +3,7 @@
 //
 // When you add a file, add it to FILES and bump VERSION so installed copies pick it up.
 // `node test/files.test.js` checks that every unit in index.html is listed here.
-var VERSION = 'v16';
+var VERSION = 'v17';
 var CACHE = 'dale-' + VERSION;
 var FONT_CACHE = 'dale-fonts';
 var IMG_CACHE = 'dale-img'; // pictures never change name, so they live outside VERSION
@@ -14,7 +14,7 @@ try { importScripts('data/images.js'); } catch (e) { self.IMAGES = { stories: {}
 var FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'icon.svg', 'icon-192.png', 'icon-512.png', 'icon-maskable.png', 'apple-touch-icon.png',
-  'js/version.js', 'js/core.js', 'js/exercise.js', 'js/screens.js', 'js/games.js', 'js/everyday.js', 'js/music.js', 'js/songs.js', 'js/words.js', 'js/explain.js', 'js/talk.js', 'js/review.js', 'js/nudge.js',
+  'js/version.js', 'js/core.js', 'js/exercise.js', 'js/screens.js', 'js/games.js', 'js/everyday.js', 'js/music.js', 'js/songs.js', 'js/words.js', 'js/explain.js', 'js/talk.js', 'js/review.js', 'js/nudge.js', 'js/daily-pick.js', 'js/daily.js',
   'data/profile.js', 'data/games.js', 'data/everyday.js', 'data/songs.js', 'data/song-times.js', 'data/wordlist.js', 'data/explain.js', 'data/talks.js', 'data/images.js', 'data/nudges.js',
   'data/units/home.js', 'data/units/dance.js', 'data/units/kitchen.js', 'data/units/dogs.js',
   'data/units/plans.js', 'data/units/law-basics.js', 'data/units/crime.js', 'data/units/gossip.js',

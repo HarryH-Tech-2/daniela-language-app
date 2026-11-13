@@ -14,6 +14,13 @@
 //   { passcode, action: 'unsubscribe', key }                  -> { ok }
 //   { passcode, action: 'status', key }                       -> { subscribed, live, today }
 //   { passcode, action: 'test', key }                         -> { ok }   (one reminder now)
+//   { passcode, action: 'daily', key, on, times? }            -> { daily }  (3 words a day)
+//   { passcode, action: 'dailytest', key }                    -> { ok }   (today's first word now)
+//
+// 3 words a day: separately from the scroll reminders, a phone with daily.on gets one
+// notification at each of daily.times (her local time, default 09:00, 14:00 and 19:00),
+// each with one of today's 3 words (js/daily-pick.js, the same words as the app's daily
+// quiz). The same cron tick sends them. One that's more than 2 hours late is skipped.
 // GET ?do=key -> { publicKey }
 //
 // Environment variables (Vercel → Project → Settings → Environment Variables):
@@ -70,11 +77,12 @@ function loadContent() {
   fs.readdirSync(unitDir).filter((f) => f.endsWith('.js')).forEach((f) => run(new URL(f, unitDir)));
   run(new URL('../data/wordlist.js', import.meta.url));
   run(new URL('../data/nudges.js', import.meta.url));
+  run(new URL('../js/daily-pick.js', import.meta.url));
   // the same keys as APP.wordKey in js/core.js, so the page can find the word again
   const words = [];
   (ctx.window.UNITS || []).forEach((u) => u.vocab.forEach((v) => words.push({ ...v, key: u.id + ':' + v.w })));
-  (ctx.window.WORDLIST || []).forEach((g) => g.items.forEach((v) => words.push({ ...v, key: 'b2:' + v.w })));
-  content = { words, facts: ctx.window.NUDGE_FACTS || [] };
+  (ctx.window.WORDLIST || []).forEach((g) => g.items.forEach((v) => words.push({ ...v, group: g.id, key: 'b2:' + v.w })));
+  content = { words, facts: ctx.window.NUDGE_FACTS || [], pick: ctx.window.DAILY_PICK };
   return content;
 }
 
@@ -127,6 +135,68 @@ async function remind(env, key, rec, info) {
   }
   await hset(env, SUBS, key, rec);
   return true;
+}
+
+/* ---------- 3 words a day ---------- */
+
+const TIMES = ['09:00', '14:00', '19:00'];
+const LATE = 120;                 // minutes: a reminder later than this is skipped
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+function localClock(ms, tz) {
+  const fmt = (zone) => new Intl.DateTimeFormat('en-GB', { timeZone: zone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(ms);
+  let t;
+  try { t = fmt(tz || 'America/Bogota'); } catch { t = fmt('America/Bogota'); }
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+const mins = (hhmm) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
+
+// Which of today's reminders is due now (0, 1 or 2), or -1.
+function dailyDue(daily, date, clock) {
+  const times = (daily.times || TIMES).map(mins);
+  const done = daily.sent && daily.sent.date === date ? daily.sent.n : 0;
+  for (let i = times.length - 1; i >= 0; i--) {
+    if (clock >= times[i]) return i >= done && clock - times[i] <= LATE ? i : -1;
+  }
+  return -1;
+}
+
+async function sendDaily(env, key, rec, date, i) {
+  const { words, pick } = loadContent();
+  const today = pick(words, date), w = today[i] || today[0];
+  const sound = w.ipa ? `${w.ipa}${w.pron ? ' · say ' + w.pron : ''}\n` : '';
+  const title = `Word ${i + 1} of 3 today: “${w.w}”`;
+  const body = `${sound}${w.w} = ${w.es}: ${w.def.replace(/[.!?]$/, '')}.` +
+    (i === 2 ? '\n🎯 Your 10-question quiz on today’s words is ready.' : '\n“' + w.ex + '”');
+  const payload = JSON.stringify({ title, body, url: './#/daily', tag: 'dale-daily-' + i });
+  try {
+    await webpush.sendNotification(rec.sub, payload, { TTL: 3600, urgency: 'normal' });
+  } catch (e) {
+    if (e.statusCode === 404 || e.statusCode === 410) {
+      await redis(env, ['HDEL', SUBS, key]);
+      await redis(env, ['HDEL', LIVE, key]);
+      return false;
+    }
+    throw e;
+  }
+  return true;
+}
+
+async function dailyTick(env, now) {
+  const flat = (await redis(env, ['HGETALL', SUBS])) || [];
+  let sent = 0;
+  for (let i = 0; i < flat.length; i += 2) {
+    const key = flat[i], rec = JSON.parse(flat[i + 1]);
+    if (!rec.daily || !rec.daily.on) continue;
+    const date = dayOf(now, rec.tz), due = dailyDue(rec.daily, date, localClock(now, rec.tz));
+    if (due < 0) continue;
+    // note it first, so a slow push can't make the next tick send it twice
+    rec.daily.sent = { date, n: due + 1 };
+    await hset(env, SUBS, key, rec);
+    if (await sendDaily(env, key, rec, date, due)) sent++;
+  }
+  return sent;
 }
 
 /* ---------- sessions ---------- */
@@ -182,6 +252,8 @@ async function tick(env, now) {
     await hset(env, LIVE, key, live);
     sent++;
   }
+  // a failure in one kind of reminder shouldn't stop the other
+  try { sent += await dailyTick(env, now); } catch (e) { console.error('daily', e); }
   return sent;
 }
 
@@ -258,7 +330,24 @@ export default async function handler(req, res) {
     if (body.action === 'status') {
       if (!rec) return res.status(200).json({ subscribed: false });
       const live = await hgetJSON(env, LIVE, key);
-      return res.status(200).json({ subscribed: true, live: !!(live && !live.stopped), app: live && live.app, today: await todayMinutes(env, key, rec, live, now) });
+      return res.status(200).json({ subscribed: true, live: !!(live && !live.stopped), app: live && live.app, today: await todayMinutes(env, key, rec, live, now), daily: rec.daily || { on: false, times: TIMES } });
+    }
+    if (body.action === 'daily') {
+      if (!rec) return res.status(404).json({ error: 'not subscribed' });
+      const times = Array.isArray(body.times) && body.times.length === 3 && body.times.every((t) => TIME_RE.test(t))
+        ? body.times.slice().sort() : (rec.daily && rec.daily.times) || TIMES;
+      const date = dayOf(now, rec.tz), clock = localClock(now, rec.tz);
+      // turning it on (or moving the times) doesn't send the ones already past today
+      const past = times.filter((t) => mins(t) <= clock).length;
+      const sentN = rec.daily && rec.daily.sent && rec.daily.sent.date === date ? rec.daily.sent.n : 0;
+      rec.daily = { on: !!body.on, times, sent: { date, n: Math.max(sentN, past) } };
+      await hset(env, SUBS, key, rec);
+      return res.status(200).json({ daily: rec.daily });
+    }
+    if (body.action === 'dailytest') {
+      if (!rec) return res.status(404).json({ error: 'not subscribed' });
+      const ok = await sendDaily(env, key, rec, dayOf(now, rec.tz), 0);
+      return ok ? res.status(200).json({ ok: true }) : res.status(410).json({ error: 'gone' });
     }
     if (body.action === 'test') {
       if (!rec) return res.status(404).json({ error: 'not subscribed' });
