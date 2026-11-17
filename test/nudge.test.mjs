@@ -156,12 +156,12 @@ check(!(await call('POST', { body: { passcode: 'pass', action: 'status', key } }
   clock = Date.parse('2026-11-14T00:00:00Z'); // 19:00 in Bogotá
   await tick(); await tick();
   const last = sent.slice(before).filter((x) => x.tag.startsWith('dale-daily'));
-  check(last.length === 1 && last[0].title === 'Word 3 of 3 today: “abnormal”', '19:00: word 3 once: ' + (last[0] || {}).title);
-  check(last[0].url === './#/daily' && last[0].body.includes('/æbˈnɔːməl/') && last[0].body.includes('quiz'), 'with its pronunciation and the quiz');
+  check(last.length === 1 && last[0].title.startsWith('📅 3/3 · abnormal = '), '19:00: word 3 once: ' + (last[0] || {}).title);
+  check(last[0].url === './#/daily' && last[0].body.includes('/æbˈnɔːməl/') && last[0].body.includes('“'), 'with its pronunciation, meaning and example');
   clock = Date.parse('2026-11-14T14:01:00Z'); // 09:01 the next day
   await tick();
   const next = sent.slice(before).filter((x) => x.tag.startsWith('dale-daily'));
-  check(next.length === 2 && next[1].title === 'Word 1 of 3 today: “width”', 'next morning: the new day’s first word');
+  check(next.length === 2 && next[1].title.startsWith('📅 1/3 · width = '), 'next morning: the new day’s first word');
   clock = Date.parse('2026-11-14T22:30:00Z'); // 17:30: the 14:00 one is too late now
   await tick();
   check(sent.slice(before).filter((x) => x.tag.startsWith('dale-daily')).length === 2, 'a reminder more than 2 hours late is skipped');

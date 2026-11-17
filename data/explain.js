@@ -189,5 +189,32 @@ window.EXPLAIN = [
       { q: 'What does your brother {gap}?', right: 'look like', wrong: ['look', 'looks like'] },
       { q: '{gap} does my dress look? Be honest!', right: 'How', wrong: ['What', 'How like'] }
     ]
+  },
+
+  {
+    id: 'get-rid-of', emoji: '🗑️',
+    q: 'What does “to get rid of” mean, and how do I use it?',
+    short: '“Get rid of something” means to remove it, throw it away or stop having it: deshacerse de, quitarse de encima. It’s a fixed phrase: always “get rid of” + the thing, and “get” changes for the tense (got rid of, getting rid of).',
+    parts: [
+      { h: 'What it means', t: 'To make something or someone go away because you don’t want it any more: old clothes, a cold, a bad habit, a boring guest. “I need to get rid of these old shoes.” = Tengo que deshacerme de estos zapatos viejos.' },
+      { h: 'Learn it as one block', t: '“Rid” is an old word that almost never appears alone today. Don’t try to translate it word by word: “get rid of” works like one verb, the same as “deshacerse de”. The “of” is always there, and the thing comes right after it.' },
+      { h: 'Only “get” changes', t: 'I get rid of, she gets rid of, I got rid of (past), I’ve got rid of (US: gotten rid of), I’m getting rid of, I want to get rid of. “Rid” never changes: not “ridded” or “rids”.' },
+      { h: 'Things, people and problems', t: 'Things: “We got rid of the old sofa.” Problems and feelings: “I can’t get rid of this headache / this cough / this feeling.” People (a bit rude or funny): “How can I get rid of him? He won’t stop talking!”' },
+      { h: 'Without the thing: “it” and “them”', t: 'If you don’t repeat the noun, use it or them after “of”: “That lamp is ugly. Get rid of it!” “I had loads of old magazines, so I got rid of them.”' },
+      { h: '“Be rid of” and “good riddance”', t: '“I’m finally rid of that job!” = I don’t have it any more, and I’m happy. “Good riddance!” is what you say when something or someone you didn’t like has gone: ¡Adiós y hasta nunca!' }
+    ],
+    examples: [
+      { en: 'I got rid of all my old clothes.', ok: true, note: 'past: got rid of' },
+      { en: 'This tea will help you get rid of your cold.', ok: true, note: 'a problem: quitarse el resfriado' },
+      { en: 'I want to get rid my old car.', ok: false, note: 'needs “of”: get rid of my old car' },
+      { en: 'She ridded of the sofa.', ok: false, note: 'only “get” changes: she got rid of the sofa' },
+      { en: 'That chair is broken. Get rid of it!', ok: true, note: 'it = the chair' }
+    ],
+    tip: 'From “deshacerse de”, Spanish speakers sometimes say “undo myself of” or forget the “of”. Think: deshacerse de = get rid of. Both end in a little word, “de” and “of”, and both need it.',
+    check: [
+      { q: 'I need to get rid {gap} these boxes.', right: 'of', wrong: ['from', 'off'] },
+      { q: 'Last year we {gap} our old TV.', right: 'got rid of', wrong: ['ridded', 'get rid'] },
+      { q: 'This cough won’t go away. I can’t {gap} it!', right: 'get rid of', wrong: ['get rid', 'rid of'] }
+    ]
   }
 ];

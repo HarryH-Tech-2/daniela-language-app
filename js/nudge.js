@@ -67,7 +67,7 @@
   APP.dailyRemindCard = function () {
     var card = el('section', 'card nudge-card');
     card.appendChild(el('h2', '', '📅 3 words a day'));
-    card.appendChild(el('p', '', 'Three notifications a day, each with one of today’s 3 words, how to say it and what it means. The last one opens a 10-question quiz on them.'));
+    card.appendChild(el('p', '', 'Three notifications a day, each with one of today’s 3 words, what it means in Spanish, how to say it and an example, all in the notification itself. The quiz on them is on the home page.'));
     var body = el('div');
     card.appendChild(body);
     draw();

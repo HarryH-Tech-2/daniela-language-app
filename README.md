@@ -57,7 +57,7 @@ Progress lives only on her phone. Me → Backup downloads a file she can restore
   - "✍️ Type it" asks her to write the English word from the Spanish and the meaning.
   - The deck at a glance: new, learning, known and mastered, and how many words come back each day this week.
 - **Today's 3 words** (`js/daily.js`, picked by `js/daily-pick.js`): three words a day on the home page. The new reading words come first, then every other word in a fixed order. At #/daily she sees each word with its pronunciation, says it out loud, then does a 10-question quiz: meaning, Spanish to English, fill the gap, and listen and spell. The first quiz of the day grades the 3 words in Review.
-  - **3 words a day notifications** (Me → 3 words a day): one at 9:00, 14:00 and 19:00 (or earlier or later), each with one of today's words and how to say it; the last opens the quiz. They use the same push setup and cron as the scroll reminders but need no Shortcuts. A reminder more than 2 hours late is skipped.
+  - **3 words a day notifications** (Me → 3 words a day): one at 9:00, 14:00 and 19:00 (or earlier or later), each showing one of today's words in full in the notification (Spanish, pronunciation, meaning, example), so there's no need to open the app. They use the same push setup and cron as the scroll reminders but need no Shortcuts. A reminder more than 2 hours late is skipped.
 - **10 games** (`js/games.js`, data in `data/games.js`):
   - Picture this
   - Falsos amigos

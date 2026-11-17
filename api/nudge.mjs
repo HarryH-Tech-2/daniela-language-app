@@ -165,10 +165,15 @@ function dailyDue(daily, date, clock) {
 async function sendDaily(env, key, rec, date, i) {
   const { words, pick } = loadContent();
   const today = pick(words, date), w = today[i] || today[0];
-  const sound = w.ipa ? `${w.ipa}${w.pron ? ' · say ' + w.pron : ''}\n` : '';
-  const title = `Word ${i + 1} of 3 today: “${w.w}”`;
-  const body = `${sound}${w.w} = ${w.es}: ${w.def.replace(/[.!?]$/, '')}.` +
-    (i === 2 ? '\n🎯 Your 10-question quiz on today’s words is ready.' : '\n“' + w.ex + '”');
+  // Everything she needs is in the notification itself, so she learns the word without
+  // opening the app: the word and its Spanish in the title (shown even when collapsed),
+  // then how to say it, what it means and an example.
+  const title = `📅 ${i + 1}/3 · ${w.w} = ${w.es}`;
+  const body = [
+    w.ipa ? `🔊 ${w.ipa}${w.pron ? ' · say ' + w.pron : ''}` : '',
+    `${w.def.replace(/[.!?]$/, '')}.`,
+    w.ex ? `“${w.ex}”` : ''
+  ].filter(Boolean).join('\n');
   const payload = JSON.stringify({ title, body, url: './#/daily', tag: 'dale-daily-' + i });
   try {
     await webpush.sendNotification(rec.sub, payload, { TTL: 3600, urgency: 'normal' });
